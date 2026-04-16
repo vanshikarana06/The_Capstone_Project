@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', path='css/style.css') }}"/>
+    <script src="{{ url_for('static', path='js/chat.js') }}"></script>
+
+    <title>AI Image Forensics | Digital Investigation Suite</title>
+  </head>
+  <body>
+    <div class="container" style="max-width: 900px">
+      <h1>🔍 Image Tampering Detector</h1>
+      <p>
+        Upload an image to check for digital manipulation using Dual-Stream CNNs
+        & Forensic Metadata.
+      </p>
+
+      <form action="/predict" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required />
+        <button type="submit">Analyze Image</button>
+      </form>
+
+      {% if result is defined and result %}
+      <div class="results">
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+          "
+        >
+          <div>
+            <p style="color: #888">Input Evidence</p>
+            <img
+              src="{{ url_for('static', path=image_path) }}"
+              width="280"
+              style="border: 1px solid #444"
+            />
+          </div>
+          <div>
+            <p style="color: var(--terminal-green)">
+              AI Localization (Heatmap)
+            </p>
+            <img
+              src="{{ url_for('static', path=heatmap_path) }}"
+              width="280"
+              style="border: 1px solid var(--terminal-green)"
+            />
+          </div>
+        </div>
+
+        <div
+          style="
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #333;
+            background: #111;
+          "
+        >
+          <h2 class="{{ result.lower() }}">FORENSIC VERDICT: {{ result }}</h2>
+          <p>Statistical Confidence: <strong>{{ confidence }}%</strong></p>
+          <p style="font-size: 0.8rem; color: #666">
+            Note: Heatmap highlights regions with high ELA noise variance.
+          </p>
+        </div>
+
+        <div
+          style="
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: left;
+          "
+        >
+          <div
+            style="
+              background: rgba(0, 255, 65, 0.03);
+              padding: 15px;
+              border: 1px solid #222;
+              border-top: 2px solid var(--terminal-green);
+            "
+          >
+            <h4
+              style="
+                color: var(--terminal-green);
+                margin: 0 0 10px 0;
+                font-size: 0.9rem;
+              "
+            >
+              ⛓️ SHA-256 INTEGRITY HASH
+            </h4>
+            <p
+              style="
+                font-size: 0.7rem;
+                word-break: break-all;
+                color: #ccc;
+                font-family: monospace;
+              "
+            >
+              {{ hash }}
+            </p>
+          </div>
+
+          <div
+            style="
+              background: rgba(0, 255, 65, 0.03);
+              padding: 15px;
+              border: 1px solid #222;
+              border-top: 2px solid var(--terminal-green);
+            "
+          >
+            <h4
+              style="
+                color: var(--terminal-green);
+                margin: 0 0 10px 0;
+                font-size: 0.9rem;
+              "
+            >
+              📄 FILE METADATA
+            </h4>
+            <div style="font-size: 0.8rem; color: #ccc">
+              <p style="margin: 4px 0">
+                <strong>Size:</strong> {{ metadata.get('size_kb', '0') }} KB
+              </p>
+              <p style="margin: 4px 0">
+                <strong>Software:</strong> {{ metadata.get('software', 'Not
+                detected') }}
+              </p>
+              <p style="margin: 4px 0">
+                <strong>Camera:</strong> {{ metadata.get('camera', 'N/A') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {% if legal_info %}
+        <div
+          style="
+            margin-top: 20px;
+            border-left: 4px solid var(--terminal-green);
+            padding: 15px;
+            text-align: left;
+            background: rgba(0, 255, 65, 0.05);
+          "
+        >
+          <h3
+            style="
+              color: var(--terminal-green);
+              margin-top: 0;
+              font-size: 1.1rem;
+            "
+          >
+            ⚖️ LEGAL ADVISORY (INDIA)
+          </h3>
+          <p style="font-size: 0.9rem; margin-bottom: 10px">
+            <strong>{{ legal_info.title }}</strong>
+          </p>
+
+          <ul style="font-size: 0.85rem; color: #ddd; padding-left: 20px">
+            {% for item in legal_info.sections %}
+            <li style="margin-bottom: 5px">
+              <strong>{{ item.act }} - {{ item.sec }}:</strong> {{ item.desc }}
+            </li>
+            {% endfor %}
+          </ul>
+
+          <p
+            style="
+              font-size: 0.8rem;
+              font-style: italic;
+              color: #888;
+              margin-top: 10px;
+            "
+          >
+            Forensic Implication: {{ legal_info.implication }}
+          </p>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div id="chat-widget" class="forensic-chat">
+      <div class="chat-header">🔍 Forensic AI Assistant</div>
+      <div id="chat-window" class="chat-messages">
+        <div class="ai-msg">System: Ready for image analysis.</div>
+      </div>
+
+      <div id="ai-loader" class="hidden">
+        <span class="spinner"></span> AI is analyzing...
+      </div>
+
+      <div class="chat-input-area">
+        <input
+          type="text"
+          id="user-input"
+          placeholder="Ask about the forgery..."
+        />
+        <button onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </body>
+</html>

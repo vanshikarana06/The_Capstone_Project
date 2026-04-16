@@ -1,0 +1,10 @@
+venvifd/
+.venvifd/
+env/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore environment variables/secrets
+.env
