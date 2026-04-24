@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeiVs — Image Integrity Checker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg:         #f4f6f9;
+            --surface:    #ffffff;
+            --surface2:   #f0f4f8;
+            --border:     #e2e8f0;
+            --border2:    #cbd5e1;
+            --text:       #1e293b;
+            --text-soft:  #64748b;
+            --text-muted: #94a3b8;
+            --blue:       #2563eb;
+            --blue-light: #eff6ff;
+            --blue-mid:   #bfdbfe;
+            --green:      #16a34a;
+            --green-light:#f0fdf4;
+            --green-mid:  #bbf7d0;
+            --red:        #dc2626;
+            --red-light:  #fef2f2;
+            --red-mid:    #fecaca;
+            --amber:      #d97706;
+            --amber-light:#fffbeb;
+            --amber-mid:  #fde68a;
+            --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+            --shadow:     0 4px 16px rgba(0,0,0,0.08);
+            --shadow-lg:  0 10px 32px rgba(0,0,0,0.1);
+            --radius:     16px;
+            --radius-sm:  10px;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+
+        .logo-shield {
+            width: 36px; height: 36px;
+            background: var(--blue);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-shield svg { width: 20px; height: 20px; }
+
+        .logo-name { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--text); }
+        .logo-name span { color: var(--blue); }
+
+        .logo-tag {
+            font-size: 0.7rem; font-weight: 500; color: var(--text-muted);
+            letter-spacing: 0.04em;
+            padding: 2px 8px;
+            background: var(--surface2);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .dev-link {
+            font-size: 0.78rem; font-weight: 500; color: var(--text-soft);
+            text-decoration: none; padding: 6px 14px;
+            border: 1px solid var(--border2); border-radius: 8px;
+            transition: all 0.15s;
+        }
+        .dev-link:hover { background: var(--surface2); color: var(--text); }
+
+        /* ── MAIN ── */
+        main {
+            flex: 1;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        /* ── HERO ── */
+        .hero { text-align: center; margin-bottom: 2rem; }
+        .hero-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2rem; letter-spacing: -0.02em;
+            margin-bottom: 0.6rem; line-height: 1.2;
+        }
+        .hero-sub { font-size: 0.95rem; color: var(--text-soft); line-height: 1.6; max-width: 460px; margin: 0 auto; }
+
+        /* ── HOW IT WORKS ── */
+        .howto {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .howto-title {
+            font-size: 0.72rem; font-weight: 600;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 1rem;
+        }
+        .howto-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+        .howto-step { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; }
+        .howto-num {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: var(--blue-light); border: 1px solid var(--blue-mid);
+            color: var(--blue); font-size: 0.82rem; font-weight: 600;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .howto-label { font-size: 0.8rem; font-weight: 600; }
+        .howto-desc { font-size: 0.73rem; color: var(--text-soft); line-height: 1.5; }
+
+        /* ── UPLOAD CARD ── */
+        .upload-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-zone {
+            padding: 3rem 2rem; text-align: center;
+            border: 2px dashed var(--border2);
+            margin: 1.5rem; border-radius: var(--radius-sm);
+            cursor: pointer; transition: all 0.2s;
+            background: var(--surface2);
+        }
+        .upload-zone:hover, .upload-zone.drag-active {
+            border-color: var(--blue); background: var(--blue-light);
+        }
+
+        .upload-icon {
+            width: 64px; height: 64px;
+            background: var(--blue-light);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem;
+            border: 1px solid var(--blue-mid);
+            transition: all 0.2s;
+        }
+        .upload-zone:hover .upload-icon { background: var(--blue); }
+        .upload-zone:hover .upload-icon svg path { stroke: #ffffff; }
+
+        .upload-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
+        .upload-sub { font-size: 0.83rem; color: var(--text-soft); margin-bottom: 1.25rem; }
+
+        .btn-browse {
+            background: var(--blue); color: #fff; border: none;
+            padding: 0.6rem 1.5rem; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-browse:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+        /* ── FILE BAR ── */
+        .file-bar {
+            display: none; align-items: center; gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: var(--blue-light);
+            border-top: 1px solid var(--blue-mid);
+        }
+        .file-icon {
+            width: 38px; height: 38px;
+            background: var(--blue); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .file-name { flex: 1; font-size: 0.88rem; font-weight: 500; word-break: break-all; }
+        .file-size { font-size: 0.75rem; color: var(--text-soft); }
+
+        .btn-analyze {
+            background: var(--blue); color: #fff; border: none;
+            padding: 0.65rem 1.5rem; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;
+            transition: all 0.15s;
+        }
+        .btn-analyze:hover { background: #1d4ed8; }
+        .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── LOADING ── */
+        .loading-card {
+            display: none; background: var(--surface);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 2rem 1.5rem; text-align: center;
+            margin-bottom: 1.5rem; box-shadow: var(--shadow);
+        }
+        .spinner {
+            width: 44px; height: 44px;
+            border: 3px solid var(--border); border-top-color: var(--blue);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.25rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.4rem; }
+        .loading-steps { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.25rem; text-align: left; max-width: 320px; margin-left: auto; margin-right: auto; }
+        .loading-step { display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem; color: var(--text-soft); }
+        .step-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--border2); flex-shrink: 0;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
+        .loading-step:nth-child(2) .step-dot { animation-delay: 0.2s; }
+        .loading-step:nth-child(3) .step-dot { animation-delay: 0.4s; }
+        .loading-step:nth-child(4) .step-dot { animation-delay: 0.6s; }
+        .loading-step:nth-child(5) .step-dot { animation-delay: 0.8s; }
+        @keyframes pulse-dot { 0%,100%{background:var(--border2)} 50%{background:var(--blue)} }
+
+        /* ── RESULTS ── */
+        #results { display: none; }
+
+        @keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+        /* ── VERDICT CARD ── */
+        .verdict-card {
+            border-radius: var(--radius); padding: 1.75rem;
+            margin-bottom: 1rem; display: flex; align-items: center; gap: 1.5rem;
+            box-shadow: var(--shadow); border: 1px solid transparent;
+            animation: slideUp 0.35s ease;
+        }
+        .verdict-card.authentic { background: var(--green-light); border-color: var(--green-mid); }
+        .verdict-card.tampered  { background: var(--red-light);   border-color: var(--red-mid); }
+        .verdict-card.pending   { background: var(--amber-light);  border-color: var(--amber-mid); }
+
+        .verdict-icon {
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; flex-shrink: 0;
+        }
+        .authentic .verdict-icon { background: var(--green-mid); }
+        .tampered  .verdict-icon { background: var(--red-mid); }
+        .pending   .verdict-icon { background: var(--amber-mid); }
+
+        .verdict-content { flex: 1; }
+        .verdict-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-soft); margin-bottom: 0.25rem; }
+        .verdict-title { font-family: 'DM Serif Display', serif; font-size: 1.6rem; letter-spacing: -0.01em; margin-bottom: 0.2rem; }
+        .authentic .verdict-title { color: var(--green); }
+        .tampered  .verdict-title { color: var(--red); }
+        .pending   .verdict-title { color: var(--amber); }
+
+        .verdict-conf { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem; }
+        .verdict-desc { font-size: 0.85rem; color: var(--text-soft); line-height: 1.5; }
+
+        .verdict-meta { text-align: right; flex-shrink: 0; }
+        .verdict-file { font-size: 0.78rem; color: var(--text-soft); max-width: 180px; word-break: break-all; }
+        .verdict-id { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.25rem; font-family: monospace; }
+
+        /* ── IMAGE COMPARISON ── */
+        .image-compare {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            animation: slideUp 0.35s ease;
+        }
+        .img-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        .img-label {
+            padding: 0.65rem 1rem;
+            font-size: 0.72rem; font-weight: 600;
+            letter-spacing: 0.05em; text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+        }
+        .img-label.original { color: var(--text-soft); }
+        .img-label.heatmap  { color: var(--blue); }
+        .img-panel img { width: 100%; display: block; max-height: 250px; object-fit: contain; background: var(--surface2); }
+        .img-note { font-size: 0.7rem; color: var(--text-muted); padding: 0.5rem 1rem; }
+
+        /* ── DETAIL CARDS ── */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem; margin-bottom: 1rem;
+        }
+        .detail-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            animation: slideUp 0.35s ease;
+        }
+        .detail-card.full { grid-column: 1 / -1; }
+
+        .detail-header {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+        }
+        .detail-icon { font-size: 1rem; }
+        .detail-title { font-size: 0.8rem; font-weight: 600; }
+        .detail-subtitle { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; }
+
+        .detail-body { padding: 1.25rem; }
+
+        .hash-value {
+            font-family: monospace; font-size: 0.72rem;
+            color: var(--blue); background: var(--blue-light);
+            border: 1px solid var(--blue-mid); border-radius: 6px;
+            padding: 0.75rem 1rem; word-break: break-all; line-height: 1.8;
+            margin-bottom: 0.75rem;
+        }
+        .hash-explain { font-size: 0.78rem; color: var(--text-soft); line-height: 1.6; }
+
+        .meta-item {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 1rem; padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border); font-size: 0.82rem;
+        }
+        .meta-item:last-child { border-bottom: none; }
+        .meta-label { font-weight: 500; color: var(--text-soft); flex-shrink: 0; font-size: 0.78rem; }
+        .meta-value { color: var(--text); text-align: right; font-size: 0.78rem; word-break: break-word; }
+        .meta-empty { font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 1rem 0; }
+
+        /* ── LEGAL CARD ── */
+        .legal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin-bottom: 1rem;
+            animation: slideUp 0.35s ease;
+            display: none;
+        }
+        .legal-card.tampered { border-left: 4px solid var(--red); }
+        .legal-card.authentic { border-left: 4px solid var(--green); }
+
+        .legal-header {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+        }
+
+        .legal-body { padding: 1.25rem; }
+        .legal-title-text { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+        .legal-section-item {
+            display: flex; gap: 0.75rem;
+            padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+        }
+        .legal-section-item:last-of-type { border-bottom: none; }
+        .legal-badge {
+            background: var(--red-light); color: var(--red);
+            border: 1px solid var(--red-mid);
+            border-radius: 4px; padding: 1px 6px;
+            font-size: 0.65rem; font-weight: 600;
+            white-space: nowrap; height: fit-content; margin-top: 2px;
+        }
+        .legal-authentic .legal-badge { background: var(--green-light); color: var(--green); border-color: var(--green-mid); }
+        .legal-section-desc { color: var(--text-soft); line-height: 1.5; }
+
+        .legal-implication {
+            margin-top: 0.75rem;
+            font-size: 0.78rem; color: var(--text-soft);
+            font-style: italic; line-height: 1.6;
+            padding-top: 0.75rem; border-top: 1px solid var(--border);
+        }
+
+        /* ── ACTIONS ── */
+        .action-row {
+            display: flex; gap: 0.75rem; justify-content: center;
+            padding-bottom: 2rem; animation: slideUp 0.35s ease;
+        }
+        .btn-report {
+            background: var(--blue); color: #fff; border: none;
+            padding: 0.75rem 1.75rem; border-radius: 10px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; transition: all 0.15s;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-report:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,0.3); }
+        .btn-reset {
+            background: var(--surface); color: var(--text);
+            border: 1px solid var(--border2); padding: 0.75rem 1.75rem;
+            border-radius: 10px; font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-reset:hover { background: var(--surface2); }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--surface); border-top: 1px solid var(--border);
+            padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+        }
+        .footer-text { font-size: 0.72rem; color: var(--text-muted); }
+        .footer-dev-link { font-size: 0.72rem; color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+        .footer-dev-link:hover { color: var(--blue); }
+
+        /* ── CHAT POPUP ── */
+        .chat-fab {
+            position: fixed;
+            bottom: 1.75rem;
+            right: 1.75rem;
+            width: 52px; height: 52px;
+            background: var(--blue);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            z-index: 200;
+            transition: all 0.2s;
+        }
+        .chat-fab:hover { background: #1d4ed8; transform: scale(1.08); box-shadow: 0 6px 20px rgba(37,99,235,0.5); }
+
+        .chat-popup {
+            position: fixed;
+            bottom: 5.5rem;
+            right: 1.75rem;
+            width: 340px;
+            height: 460px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            z-index: 200;
+            overflow: hidden;
+            transform: scale(0.95) translateY(10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .chat-popup.open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .chat-popup-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 0.75rem;
+            background: var(--blue);
+            flex-shrink: 0;
+        }
+        .chat-popup-avatar {
+            width: 32px; height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .chat-popup-title {
+            flex: 1;
+            font-size: 0.88rem; font-weight: 600;
+            color: #fff;
+        }
+        .chat-popup-sub {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.75);
+        }
+        .chat-popup-close {
+            background: none; border: none;
+            color: rgba(255,255,255,0.75);
+            cursor: pointer; font-size: 1.1rem;
+            padding: 2px 4px; border-radius: 4px;
+            transition: all 0.15s;
+        }
+        .chat-popup-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+        .chat-popup-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .chat-popup-messages::-webkit-scrollbar { width: 4px; }
+        .chat-popup-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+        .chat-msg-ai {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px 12px 12px 4px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.82rem;
+            color: var(--text);
+            line-height: 1.6;
+            max-width: 88%;
+            align-self: flex-start;
+            word-break: break-word;
+        }
+        .chat-msg-user {
+            background: var(--blue);
+            border-radius: 12px 12px 4px 12px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.82rem;
+            color: #fff;
+            line-height: 1.6;
+            max-width: 88%;
+            align-self: flex-end;
+            word-break: break-word;
+        }
+        .chat-msg-error {
+            background: var(--red-light);
+            border: 1px solid var(--red-mid);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.78rem;
+            color: var(--red);
+        }
+
+        .chat-popup-loader {
+            display: none;
+            padding: 0 1rem 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+        .chat-typing-dots span {
+            display: inline-block;
+            width: 6px; height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            margin: 0 1px;
+            animation: typing 1.2s infinite;
+        }
+        .chat-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+        .chat-popup-input {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--border);
+            display: flex; gap: 0.5rem;
+            flex-shrink: 0;
+            background: var(--surface);
+        }
+        .chat-popup-input input {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .chat-popup-input input:focus { border-color: var(--blue); }
+        .chat-popup-input input::placeholder { color: var(--text-muted); }
+        .chat-popup-input button {
+            background: var(--blue); color: #fff; border: none;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem; font-weight: 600;
+            padding: 0.55rem 1rem; border-radius: 8px;
+            cursor: pointer; transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .chat-popup-input button:hover { background: #1d4ed8; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 600px) {
+            .chat-popup { width: calc(100vw - 2rem); right: 1rem; }
+        }
+            .details-grid { grid-template-columns: 1fr; }
+            .detail-card.full { grid-column: 1; }
+            .howto-steps { grid-template-columns: 1fr; }
+            .verdict-meta { display: none; }
+            .image-compare { grid-template-columns: 1fr; }
+            footer { flex-direction: column; gap: 0.5rem; }
+            .action-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">
+            <div class="logo-shield">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3L4 7V12C4 16.4 7.4 20.5 12 21C16.6 20.5 20 16.4 20 12V7L12 3Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M9 12L11 14L15 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="logo-name">Dei<span>Vs</span></span>
+            <span class="logo-tag">Image Integrity Checker</span>
+        </div>
+        <a href="/" class="dev-link">⌨ Developer View</a>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+
+        <!-- HERO -->
+        <div class="hero">
+            <h1 class="hero-title">Has this image been tampered with?</h1>
+            <p class="hero-sub">Upload any image and our system will check whether it has been edited or modified using cryptographic analysis and AI detection.</p>
+        </div>
+
+        <!-- HOW IT WORKS -->
+        <div class="howto">
+            <div class="howto-title">How it works</div>
+            <div class="howto-steps">
+                <div class="howto-step">
+                    <div class="howto-num">1</div>
+                    <div class="howto-label">Upload your image</div>
+                    <div class="howto-desc">JPG or PNG files are supported</div>
+                </div>
+                <div class="howto-step">
+                    <div class="howto-num">2</div>
+                    <div class="howto-label">We analyse it</div>
+                    <div class="howto-desc">Hash check, metadata scan, AI detection, and heatmap generation</div>
+                </div>
+                <div class="howto-step">
+                    <div class="howto-num">3</div>
+                    <div class="howto-label">Get your result</div>
+                    <div class="howto-desc">Clear verdict with heatmap and downloadable PDF report</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPLOAD CARD -->
+        <div class="upload-card">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <path d="M14 4L14 20" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M8 10L14 4L20 10" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M4 22H24" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="upload-title">Drop your image here</div>
+                <div class="upload-sub">Supports JPG, JPEG, PNG &nbsp;·&nbsp; Max file size: 10MB</div>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" hidden>
+                <button class="btn-browse" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
+                    Browse files
+                </button>
+            </div>
+
+            <div class="file-bar" id="fileBar">
+                <div class="file-icon">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <rect x="3" y="2" width="12" height="14" rx="2" stroke="white" stroke-width="1.5"/>
+                        <path d="M6 7H12M6 10H10" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="file-name" id="fileBarName">--</div>
+                    <div class="file-size" id="fileBarSize">--</div>
+                </div>
+                <button class="btn-analyze" id="btnRun" onclick="analyzeFile()">
+                    Check Image
+                </button>
+            </div>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading-card" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-title">Analysing your image…</div>
+            <div class="loading-steps">
+                <div class="loading-step"><div class="step-dot"></div> Generating cryptographic fingerprint</div>
+                <div class="loading-step"><div class="step-dot"></div> Scanning file metadata</div>
+                <div class="loading-step"><div class="step-dot"></div> Running AI tampering detection</div>
+                <div class="loading-step"><div class="step-dot"></div> Generating localization heatmap</div>
+                <div class="loading-step"><div class="step-dot"></div> Preparing forensic report</div>
+            </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="results">
+
+            <!-- VERDICT -->
+            <div class="verdict-card" id="verdictCard">
+                <div class="verdict-icon" id="verdictIcon">⏳</div>
+                <div class="verdict-content">
+                    <div class="verdict-label">Analysis Result</div>
+                    <div class="verdict-title" id="verdictTitle">Pending</div>
+                    <div class="verdict-conf" id="verdictConf"></div>
+                    <div class="verdict-desc" id="verdictDesc">--</div>
+                </div>
+                <div class="verdict-meta">
+                    <div class="verdict-file" id="verdictFile">--</div>
+                    <div class="verdict-id" id="verdictId">--</div>
+                </div>
+            </div>
+
+            <!-- IMAGE COMPARISON -->
+            <div class="image-compare" id="imageCompare">
+                <div class="img-panel">
+                    <div class="img-label original">📷 Original Image</div>
+                    <img id="inputImage" src="" alt="Input image">
+                </div>
+                <div class="img-panel">
+                    <div class="img-label heatmap">🔥 AI Localization Heatmap</div>
+                    <img id="heatmapImage" src="" alt="Heatmap">
+                    <div class="img-note">Highlighted areas indicate regions with high ELA noise variance — potential sites of manipulation.</div>
+                </div>
+            </div>
+
+            <!-- DETAIL CARDS -->
+            <div class="details-grid">
+
+                <!-- Hash -->
+                <div class="detail-card full">
+                    <div class="detail-header">
+                        <div class="detail-icon">🔐</div>
+                        <div class="detail-title">Cryptographic Fingerprint</div>
+                        <div class="detail-subtitle">SHA-256</div>
+                    </div>
+                    <div class="detail-body">
+                        <div class="hash-value" id="hashDisplay">--</div>
+                        <div class="hash-explain">
+                            This is your image's unique digital fingerprint. Even changing a single pixel produces a completely different code — making it impossible to hide modifications.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <div class="detail-icon">📋</div>
+                        <div class="detail-title">File Details</div>
+                        <div class="detail-subtitle">Metadata</div>
+                    </div>
+                    <div class="detail-body" id="metadataRows">--</div>
+                </div>
+
+                <!-- AI Detection -->
+                <div class="detail-card">
+                    <div class="detail-header">
+                        <div class="detail-icon">🤖</div>
+                        <div class="detail-title">AI Detection</div>
+                        <div class="detail-subtitle">Dual-Stream CNN</div>
+                    </div>
+                    <div class="detail-body" id="mlPanel">--</div>
+                </div>
+
+            </div>
+
+            <!-- LEGAL ADVISORY -->
+            <div class="legal-card" id="legalCard">
+                <div class="legal-header">
+                    <div class="detail-icon">⚖️</div>
+                    <div class="detail-title">Legal Advisory (India)</div>
+                </div>
+                <div class="legal-body">
+                    <div class="legal-title-text" id="legalTitle">--</div>
+                    <div id="legalSections"></div>
+                    <div class="legal-implication" id="legalImplication">--</div>
+                </div>
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="action-row">
+                <button class="btn-report" onclick="downloadReport()">
+                    ⬇ Download PDF Report
+                </button>
+                <button class="btn-reset" onclick="resetForm()">
+                    ↺ Check Another Image
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-text">DeiVs · B.Tech CSE Capstone Project · For educational and forensic use</div>
+        <a href="/" class="footer-dev-link">⌨ Switch to Developer View</a>
+    </footer>
+
+    <script>
+        // ── FILE SELECTION ──────────────────────────
+        const zone      = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        zone.addEventListener('click', () => fileInput.click());
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-active'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-active'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault(); zone.classList.remove('drag-active');
+            if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; showFileBar(e.dataTransfer.files[0]); }
+        });
+        fileInput.addEventListener('change', () => { if (fileInput.files[0]) showFileBar(fileInput.files[0]); });
+
+        function showFileBar(file) {
+            document.getElementById('fileBarName').textContent = file.name;
+            document.getElementById('fileBarSize').textContent = (file.size/1024).toFixed(1) + ' KB';
+            document.getElementById('fileBar').style.display = 'flex';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        // ── ANALYZE ────────────────────────────────
+        let currentData = null;
+
+        async function analyzeFile() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('btnRun').disabled = true;
+
+            const fd = new FormData();
+            fd.append('file', file);
+
+            try {
+                const res  = await fetch('/analyze', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.error) { alert('Error: ' + data.error); return; }
+                currentData = data;
+                renderResults(data);
+            } catch(e) {
+                alert('Could not connect to server. Please make sure the application is running.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('btnRun').disabled = false;
+            }
+        }
+
+        function renderResults(data) {
+            const isTampered = data.result === 'TAMPERED';
+
+            // Verdict card
+            const card  = document.getElementById('verdictCard');
+            const icon  = document.getElementById('verdictIcon');
+            const title = document.getElementById('verdictTitle');
+            const conf  = document.getElementById('verdictConf');
+            const desc  = document.getElementById('verdictDesc');
+
+            if (isTampered) {
+                card.className  = 'verdict-card tampered';
+                icon.textContent  = '⚠️';
+                title.textContent = 'Possibly Tampered';
+                conf.textContent  = `Confidence: ${data.confidence}%`;
+                desc.textContent  = 'Our analysis detected signs that this image may have been modified. Please review the heatmap and details below or consult a forensic expert.';
+            } else {
+                card.className  = 'verdict-card authentic';
+                icon.textContent  = '✅';
+                title.textContent = 'Appears Authentic';
+                conf.textContent  = `Confidence: ${data.confidence}%`;
+                desc.textContent  = 'Our analysis found no signs of tampering. The image appears to be in its original, unmodified state.';
+            }
+
+            document.getElementById('verdictFile').textContent = data.filename;
+            document.getElementById('verdictId').textContent   = 'ID: DeiVs-' + Date.now().toString(36).toUpperCase();
+
+            // Images
+            if (data.image_url && data.heatmap_url) {
+                document.getElementById('inputImage').src  = data.image_url;
+                document.getElementById('heatmapImage').src = data.heatmap_url;
+                document.getElementById('imageCompare').style.display = 'grid';
+            }
+
+            // Hash
+            document.getElementById('hashDisplay').textContent = data.hash;
+
+            // Metadata
+            const m = data.metadata;
+            const labelMap = { 'SIZE':'File Size','CREATED':'Created','MODIFIED':'Last Modified','SOFTWARE':'Editing Software','CAMERA':'Camera / Device','DATETIME':'Date Taken' };
+            const fields = [
+                ['SIZE',m.size_kb+' KB'],['CREATED',m.created],['MODIFIED',m.modified],
+                ['SOFTWARE',m.software||null],['CAMERA',m.camera||null],['DATETIME',m.datetime||null],
+            ];
+            let rows = '';
+            fields.forEach(([k,v]) => {
+                if (!v || v==='Not available') return;
+                rows += `<div class="meta-item"><span class="meta-label">${labelMap[k]||k}</span><span class="meta-value">${v}</span></div>`;
+            });
+            document.getElementById('metadataRows').innerHTML = rows || '<div class="meta-empty">No metadata available.</div>';
+
+            // ML panel
+            const resultColor = isTampered ? 'var(--red)' : 'var(--green)';
+            document.getElementById('mlPanel').innerHTML = `
+                <div class="meta-item"><span class="meta-label">Verdict</span><span class="meta-value" style="color:${resultColor};font-weight:600;">${isTampered ? 'Tampered' : 'Authentic'}</span></div>
+                <div class="meta-item"><span class="meta-label">Confidence</span><span class="meta-value">${data.confidence}%</span></div>
+                <div class="meta-item"><span class="meta-label">Model</span><span class="meta-value">Dual-Stream CNN</span></div>
+                <div class="meta-item"><span class="meta-label">Model Accuracy</span><span class="meta-value">89.2%</span></div>
+            `;
+
+            // Legal advisory
+            if (data.legal_info) {
+                const li = data.legal_info;
+                document.getElementById('legalTitle').textContent = li.title;
+                let sections = '';
+                (li.sections||[]).forEach(s => {
+                    sections += `<div class="legal-section-item">
+                        <span class="legal-badge">${s.sec}</span>
+                        <span class="legal-section-desc"><strong>${s.act}</strong> — ${s.desc}</span>
+                    </div>`;
+                });
+                document.getElementById('legalSections').innerHTML = sections;
+                document.getElementById('legalImplication').textContent = li.implication;
+                const lc = document.getElementById('legalCard');
+                lc.style.display = 'block';
+                lc.className = 'legal-card ' + (isTampered ? 'tampered' : 'authentic');
+            }
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ── PDF REPORT ──────────────────────────────
+        async function downloadReport() {
+    if (!currentData) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const d = currentData;
+    const m = d.metadata;
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 50;
+    const contentW = pageW - margin * 2;
+    let y = 0;
+
+    const LINE = () => { doc.setDrawColor(220,220,220); doc.setLineWidth(0.5); doc.line(margin,y,pageW-margin,y); y+=14; };
+    const GAP  = (n=10) => { y+=n; };
+    const TEXT = (txt, size=10, color=[40,40,40], style='normal', font='helvetica') => {
+        doc.setFontSize(size); doc.setTextColor(...color); doc.setFont(font,style);
+        const lines = doc.splitTextToSize(txt, contentW);
+        doc.text(lines, margin, y); y += lines.length*(size*1.45);
+    };
+
+    // Helper to load image as base64
+    const loadImg = (url) => new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width; canvas.height = img.height;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            resolve({ data: canvas.toDataURL('image/jpeg', 0.85), w: img.width, h: img.height });
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+
+    // Load both images
+    const [origImg, heatImg] = await Promise.all([
+        d.image_url  ? loadImg(d.image_url)  : Promise.resolve(null),
+        d.heatmap_url ? loadImg(d.heatmap_url) : Promise.resolve(null),
+    ]);
+
+    // Blue header bar
+    doc.setFillColor(37,99,235);
+    doc.rect(0,0,pageW,60,'F');
+    doc.setFontSize(16); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+    doc.text('DeiVs — Evidence Integrity Report', margin, 30);
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text('Digital Evidence Integrity Verification System', margin, 46);
+    y = 80;
+
+    const isTampered = d.result === 'TAMPERED';
+    TEXT(`File: ${d.filename}`, 10, [40,40,40], 'bold');
+    TEXT(`Analysis ID: DeiVs-${Date.now().toString(36).toUpperCase()}`, 9, [100,100,100]);
+    TEXT(`Date: ${new Date().toLocaleString()}`, 9, [100,100,100]);
+    TEXT(`Verdict: ${d.result}`, 10, isTampered?[180,40,40]:[22,163,74], 'bold');
+    TEXT(`Confidence: ${d.confidence}%`, 9, [100,100,100]);
+    GAP(6); LINE();
+
+    // Images section
+    if (origImg || heatImg) {
+        TEXT('1. Visual Evidence', 11, [37,99,235], 'bold');
+        GAP(6);
+        const imgW = (contentW - 12) / 2;
+        const imgH = 160;
+
+        if (origImg) {
+            doc.setFontSize(8); doc.setTextColor(100,100,100); doc.setFont('helvetica','bold');
+            doc.text('ORIGINAL IMAGE', margin, y);
+            y += 10;
+            doc.addImage(origImg.data, 'JPEG', margin, y, imgW, imgH);
+        }
+        if (heatImg) {
+            doc.setFontSize(8); doc.setTextColor(37,99,235); doc.setFont('helvetica','bold');
+            doc.text('AI LOCALIZATION HEATMAP', margin + imgW + 12, y - 10);
+            doc.addImage(heatImg.data, 'JPEG', margin + imgW + 12, y, imgW, imgH);
+        }
+        y += imgH + 6;
+        doc.setFontSize(7); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+        doc.text('Heatmap highlights regions with high ELA noise variance — potential sites of manipulation.', margin, y);
+        y += 14;
+        GAP(6); LINE();
+    }
+
+    TEXT('2. Cryptographic Fingerprint (SHA-256)', 11, [37,99,235], 'bold');
+    GAP(5);
+    doc.setFillColor(239,246,255);
+    doc.roundedRect(margin,y,contentW,32,4,4,'F');
+    doc.setFontSize(8); doc.setTextColor(30,64,175); doc.setFont('courier','normal');
+    doc.text(doc.splitTextToSize(d.hash, contentW-20), margin+10, y+14);
+    y+=40; GAP(4);
+    TEXT('Any modification — even a single pixel — produces a completely different fingerprint.', 8, [100,100,100]);
+    GAP(8); LINE();
+
+    TEXT('3. File Metadata', 11, [37,99,235], 'bold');
+    GAP(5);
+    [['File Size',m.size_kb+' KB'],['Created',m.created],['Last Modified',m.modified],
+     ['Editing Software',m.software||'Not available'],['Camera / Device',m.camera||'Not available'],
+     ['Date Taken',m.datetime||'Not available']
+    ].forEach(([k,v]) => {
+        doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(80,80,80);
+        doc.text(`${k}:`, margin, y);
+        doc.setFont('helvetica','normal'); doc.setTextColor(40,40,40);
+        doc.text(String(v), margin+130, y); y+=16;
+    });
+    GAP(6); LINE();
+
+    TEXT('4. AI Tampering Detection', 11, [37,99,235], 'bold');
+    GAP(5);
+    TEXT(`Verdict: ${d.result}`, 10, isTampered?[180,40,40]:[22,163,74], 'bold');
+    TEXT(`Confidence: ${d.confidence}%`, 9, [40,40,40]);
+    TEXT('Model: Dual-Stream CNN (RGB + ELA inputs, 128×128)', 9, [40,40,40]);
+    TEXT('Model Accuracy: 89.2% on test dataset', 9, [40,40,40]);
+    GAP(8); LINE();
+
+    if (d.legal_info) {
+        TEXT('5. Legal Advisory (India)', 11, [37,99,235], 'bold');
+        GAP(5);
+        TEXT(d.legal_info.title, 10, [40,40,40], 'bold');
+        GAP(4);
+        (d.legal_info.sections||[]).forEach(s => {
+            TEXT(`${s.act} — ${s.sec}: ${s.desc}`, 9, [80,80,80]);
+            GAP(3);
+        });
+        TEXT(`Forensic Implication: ${d.legal_info.implication}`, 8, [120,120,120]);
+        GAP(8); LINE();
+    }
+
+    TEXT('Disclaimer', 10, [180,40,40], 'bold');
+    GAP(4);
+    TEXT('This report is generated for educational and forensic analysis purposes only. Results are based on automated analysis and should be reviewed by a certified forensic expert before use in legal proceedings.', 8, [120,120,120]);
+    GAP(10); LINE();
+    TEXT('DeiVs v2.0 — B.Tech CSE Capstone Project', 8, [160,160,160]);
+
+    doc.save(`DeiVs_Report_${d.filename}_${Date.now()}.pdf`);
+}
+
+        // ── RESET ──────────────────────────────────
+        function resetForm() {
+            fileInput.value = '';
+            document.getElementById('fileBar').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('imageCompare').style.display = 'none';
+            document.getElementById('legalCard').style.display = 'none';
+            currentData = null;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ── CHAT POPUP ─────────────────────────────
+        let chatOpen = false;
+
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            document.getElementById('chatPopup').classList.toggle('open', chatOpen);
+            if (chatOpen) {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        async function sendChat() {
+            const input   = document.getElementById('chatInput');
+            const msgs    = document.getElementById('chatMessages');
+            const loader  = document.getElementById('chatLoader');
+            const message = input.value.trim();
+            if (!message) return;
+
+            msgs.innerHTML += `<div class="chat-msg-user">${message}</div>`;
+            input.value = '';
+            loader.style.display = 'block';
+            msgs.scrollTop = msgs.scrollHeight;
+
+            try {
+                const res  = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await res.json();
+                if (data.analysis_reply) {
+                    msgs.innerHTML += `<div class="chat-msg-ai">${data.analysis_reply}</div>`;
+                } else {
+                    msgs.innerHTML += `<div class="chat-msg-error">Something went wrong. Please try again.</div>`;
+                }
+            } catch(e) {
+                msgs.innerHTML += `<div class="chat-msg-error">Could not connect to server.</div>`;
+            } finally {
+                loader.style.display = 'none';
+                msgs.scrollTop = msgs.scrollHeight;
+            }
+        }
+    </script>
+
+    <!-- CHAT POPUP -->
+    <button class="chat-fab" onclick="toggleChat()" title="Ask the Forensic AI">💬</button>
+    <div class="chat-popup" id="chatPopup">
+        <div class="chat-popup-header">
+            <div class="chat-popup-avatar">🔍</div>
+            <div>
+                <div class="chat-popup-title">Forensic AI Assistant</div>
+                <div class="chat-popup-sub">Ask me anything about image analysis</div>
+            </div>
+            <button class="chat-popup-close" onclick="toggleChat()">✕</button>
+        </div>
+        <div class="chat-popup-messages" id="chatMessages">
+            <div class="chat-msg-ai">Hi! I'm your Forensic AI Assistant. You can ask me about image tampering, how this tool works, or anything about a recently analysed image.</div>
+        </div>
+        <div class="chat-popup-loader" id="chatLoader">
+            <div class="chat-typing-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="chat-popup-input">
+            <input type="text" id="chatInput" placeholder="Ask about the analysis..." onkeydown="if(event.key==='Enter') sendChat()">
+            <button onclick="sendChat()">Send</button>
+        </div>
+    </div>
+</body>
+</html>
