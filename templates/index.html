@@ -4,1025 +4,1026 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeiVs // Digital Evidence Integrity Verification System</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg:       #0a0c0f;
-            --bg2:      #0d1117;
-            --panel:    #111620;
-            --panel2:   #161c28;
-            --border:   #1e2736;
-            --border2:  #253044;
-            --green:    #00ff9d;
-            --green2:   #00cc7a;
-            --green-dim:#00ff9d22;
-            --red:      #ff4d4d;
-            --red-dim:  #ff4d4d22;
-            --amber:    #ffb347;
-            --amber-dim:#ffb34722;
-            --blue:     #4d9fff;
-            --blue-dim: #4d9fff22;
-            --text:     #c8d6e8;
-            --text-soft:#7a8fa8;
-            --text-dim: #3d5068;
+            --bg:        #080a0d;
+            --bg2:       #0c0f14;
+            --panel:     #0f1319;
+            --panel2:    #141a22;
+            --border:    #1c2433;
+            --border2:   #243040;
+            --green:     #00ff9d;
+            --green2:    #00cc7a;
+            --green-dim: rgba(0,255,157,0.08);
+            --green-glow:rgba(0,255,157,0.15);
+            --red:       #ff4d4d;
+            --red-dim:   rgba(255,77,77,0.1);
+            --amber:     #ffb347;
+            --amber-dim: rgba(255,179,71,0.1);
+            --blue:      #4d9fff;
+            --blue-dim:  rgba(77,159,255,0.1);
+            --text:      #ccd9ea;
+            --text-soft: #7a8fa8;
+            --text-dim:  #3d5068;
+            --mono:      'Share Tech Mono', monospace;
+            --display:   'Rajdhani', sans-serif;
         }
+
+        html { color-scheme: dark; }
 
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'Courier New', Courier, monospace;
+            font-family: var(--mono);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            font-size: 15px;
         }
 
         /* ── BOOT SCREEN ── */
         #bootScreen {
-            position: fixed; inset: 0;
-            background: #000;
+            position: fixed; inset: 0; background: #000;
             display: flex; align-items: center; justify-content: center;
             z-index: 999;
-            transition: opacity 0.5s ease;
         }
-        .boot-inner { max-width: 640px; width: 100%; padding: 2rem; }
+        .boot-inner { max-width: 700px; width: 100%; padding: 2.5rem; }
         .boot-line {
-            font-size: 0.78rem;
-            color: var(--green);
-            opacity: 0;
-            margin-bottom: 0.5rem;
-            transition: opacity 0.3s ease;
-            letter-spacing: 0.03em;
+            font-family: var(--mono);
+            font-size: 0.9rem; color: var(--green); opacity: 0;
+            margin-bottom: 0.6rem; letter-spacing: 0.04em;
+            transition: opacity 0.25s ease;
         }
         .blink { animation: blink 1s step-end infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-        /* ── LAYOUT ── */
-        #app { display: flex; flex-direction: column; min-height: 100vh; }
+        #app { display: none; flex-direction: column; min-height: 100vh; }
 
         /* ── HEADER ── */
         header {
             background: var(--bg2);
             border-bottom: 1px solid var(--border);
-            padding: 0 1.5rem;
-            height: 52px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 0 2.5rem; height: 58px;
+            display: flex; align-items: center; justify-content: space-between;
             position: sticky; top: 0; z-index: 100;
         }
-
-        .header-left {
-            display: flex; align-items: center; gap: 0.75rem;
-            font-size: 0.78rem; color: var(--green);
+        .header-left { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; }
+        .logo-bracket { color: var(--text-dim); font-size: 1.1rem; font-weight: bold; font-family: var(--mono); }
+        .logo-name {
+            font-family: var(--display);
+            font-size: 1.4rem; font-weight: 700; color: var(--green);
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 14px rgba(0,255,157,0.4);
         }
+        .logo-full { color: var(--text-soft); font-size: 0.8rem; letter-spacing: 0.04em; font-family: var(--mono); }
+        .header-right { display: flex; align-items: center; gap: 0.85rem; }
 
-        .logo-bracket { color: var(--text-dim); font-size: 1rem; }
-        .logo-eif { font-weight: bold; font-size: 0.9rem; letter-spacing: 0.1em; }
-        .logo-full { color: var(--text-soft); font-size: 0.68rem; }
-
-        .header-right {
-            display: flex; align-items: center; gap: 1rem;
-        }
-
+        .status-indicator { display: flex; align-items: center; gap: 0.45rem; }
         .status-dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             background: var(--green);
-            box-shadow: 0 0 6px var(--green);
+            box-shadow: 0 0 6px var(--green), 0 0 12px rgba(0,255,157,0.4);
             animation: pulse-dot 2s ease-in-out infinite;
         }
-        @keyframes pulse-dot {
-            0%,100%{box-shadow:0 0 4px var(--green)}
-            50%{box-shadow:0 0 10px var(--green)}
-        }
-        .status-text { font-size: 0.68rem; color: var(--green); letter-spacing: 0.08em; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;box-shadow:0 0 4px var(--green)} 50%{box-shadow:0 0 12px var(--green),0 0 20px rgba(0,255,157,0.4)} }
+        .status-text { font-family: var(--mono); font-size: 0.78rem; color: var(--green); letter-spacing: 0.1em; }
 
-        .btn-user-view {
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            color: var(--green);
-            background: var(--green-dim);
-            border: 1px solid var(--green2);
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            letter-spacing: 0.05em;
-            transition: all 0.15s;
+        .btn-header {
+            font-family: var(--mono);
+            font-size: 0.78rem; letter-spacing: 0.06em;
+            padding: 6px 14px; border-radius: 3px;
+            cursor: pointer; text-decoration: none;
+            transition: all 0.15s; border: 1px solid;
         }
-        .btn-user-view:hover { background: var(--green); color: #000; }
-
-        .btn-chat-toggle {
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            color: var(--blue);
-            background: var(--blue-dim);
-            border: 1px solid var(--blue);
-            padding: 5px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            letter-spacing: 0.05em;
-            transition: all 0.15s;
-        }
-        .btn-chat-toggle:hover { background: var(--blue); color: #000; }
+        .btn-user { color: var(--green); background: var(--green-dim); border-color: rgba(0,255,157,0.3); }
+        .btn-user:hover { background: var(--green); color: #000; }
+        .btn-ai { color: var(--blue); background: var(--blue-dim); border-color: rgba(77,159,255,0.35); }
+        .btn-ai:hover { background: var(--blue); color: #000; }
 
         /* ── TERMINAL BAR ── */
         .terminal-bar {
-            background: #050709;
-            border-bottom: 1px solid var(--border);
-            padding: 0.4rem 1.5rem;
-            font-size: 0.72rem;
-            color: var(--text-soft);
+            background: #050709; border-bottom: 1px solid var(--border);
+            padding: 0.55rem 2.5rem; font-family: var(--mono);
+            font-size: 0.85rem; color: var(--text-soft); letter-spacing: 0.03em;
         }
         .term-path { color: var(--green); }
-        .term-cmd  { color: var(--text); margin-left: 0.5rem; }
+        .term-cmd  { color: var(--text); }
 
-        /* ── MAIN CONTENT ── */
-        .main-wrapper {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
+        /* ── MAIN ── */
         main {
-            flex: 1;
-            padding: 2rem 2.5rem;
-            overflow-y: auto;
-            width: 100%;
+            flex: 1; padding: 2.5rem 3rem;
+            max-width: 1140px; width: 100%; margin: 0 auto;
         }
 
-        /* ── CHAT PANEL ── */
-        .chat-panel {
-            width: 360px;
-            flex-shrink: 0;
-            background: var(--bg2);
-            border-left: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            transition: width 0.25s ease, opacity 0.25s ease;
-            overflow: hidden;
-        }
-        .chat-panel.collapsed { width: 0; opacity: 0; }
-
-        .chat-panel-header {
-            padding: 0.85rem 1rem;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.75rem;
-            color: var(--green);
-            letter-spacing: 0.06em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--panel);
-            flex-shrink: 0;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-        }
-
-        .chat-messages::-webkit-scrollbar { width: 4px; }
-        .chat-messages::-webkit-scrollbar-track { background: transparent; }
-        .chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-        .ai-msg {
-            font-size: 0.72rem;
-            color: var(--green);
-            background: var(--green-dim);
-            border: 1px solid #00ff9d33;
-            border-radius: 4px;
-            padding: 0.6rem 0.75rem;
-            line-height: 1.6;
-            word-break: break-word;
-        }
-
-        .user-msg {
-            font-size: 0.72rem;
-            color: var(--blue);
-            background: var(--blue-dim);
-            border: 1px solid #4d9fff33;
-            border-radius: 4px;
-            padding: 0.6rem 0.75rem;
-            line-height: 1.6;
-            word-break: break-word;
-            align-self: flex-end;
-            max-width: 90%;
-        }
-
-        .error-msg {
-            font-size: 0.72rem;
-            color: var(--red);
-            background: var(--red-dim);
-            border-radius: 4px;
-            padding: 0.5rem 0.75rem;
-        }
-
-        .chat-loader {
-            font-size: 0.68rem;
-            color: var(--text-soft);
-            padding: 0.4rem 1rem;
-            display: none;
-        }
-
-        .chat-input-area {
-            padding: 0.75rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 0.5rem;
-            flex-shrink: 0;
-        }
-
-        .chat-input-area input {
-            flex: 1;
-            background: var(--panel);
-            border: 1px solid var(--border2);
-            color: var(--text);
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 4px;
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .chat-input-area input:focus { border-color: var(--green); }
-        .chat-input-area input::placeholder { color: var(--text-dim); }
-
-        .chat-input-area button {
-            background: var(--green);
-            color: #000;
-            border: none;
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            font-weight: bold;
-            padding: 0.5rem 0.85rem;
-            border-radius: 4px;
-            cursor: pointer;
-            letter-spacing: 0.04em;
-            transition: background 0.15s;
-        }
-        .chat-input-area button:hover { background: var(--green2); }
-
-        /* ── SECTION LABEL ── */
         .section-label {
-            font-size: 0.7rem;
-            color: var(--text-soft);
-            letter-spacing: 0.1em;
-            margin-bottom: 0.75rem;
+            font-family: var(--mono);
+            font-size: 0.78rem; color: var(--text-soft);
+            letter-spacing: 0.12em; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .section-label::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, var(--border2), transparent);
         }
 
         /* ── UPLOAD ZONE ── */
         .upload-zone {
-    position: relative;
-    border: 1px solid var(--border2);
-    background: var(--panel);
-    border-radius: 6px;
-    padding: 3.5rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 1rem;
+            position: relative; border: 1px solid var(--border2);
+            background: var(--panel); border-radius: 6px;
+            padding: 5rem 2rem; text-align: center;
+            cursor: pointer; transition: all 0.2s; margin-bottom: 1rem;
         }
         .upload-zone:hover, .upload-zone.drag-active {
-            border-color: var(--green);
-            background: var(--green-dim);
+            border-color: var(--green); background: var(--green-dim);
         }
+        .upload-zone:hover .upload-corner,
+        .upload-zone.drag-active .upload-corner { border-color: var(--green); }
 
         .upload-corner {
-            position: absolute;
-            width: 10px; height: 10px;
-            border-color: var(--green);
-            border-style: solid;
+            position: absolute; width: 14px; height: 14px;
+            border-color: var(--border2); border-style: solid; transition: border-color 0.2s;
         }
-        .tl { top: 6px; left: 6px; border-width: 1px 0 0 1px; }
-        .tr { top: 6px; right: 6px; border-width: 1px 1px 0 0; }
-        .bl { bottom: 6px; left: 6px; border-width: 0 0 1px 1px; }
-        .br { bottom: 6px; right: 6px; border-width: 0 1px 1px 0; }
+        .tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+        .tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+        .bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+        .br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+        .upload-icon-ring {
+            width: 76px; height: 76px; border-radius: 50%;
+            border: 1px solid rgba(0,255,157,0.4); background: var(--green-glow);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem; transition: all 0.2s;
+        }
+        .upload-zone:hover .upload-icon-ring { box-shadow: 0 0 20px rgba(0,255,157,0.25); }
 
         .upload-title {
-            font-size: 0.82rem;
-            color: var(--green);
-            letter-spacing: 0.08em;
-            margin-bottom: 0.4rem;
+            font-family: var(--display);
+            font-size: 1.3rem; font-weight: 700; color: var(--green);
+            letter-spacing: 0.2em; margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(0,255,157,0.3);
         }
-        .upload-sub { font-size: 0.68rem; color: var(--text-soft); margin-bottom: 1rem; }
+        .upload-sub { font-family: var(--mono); font-size: 0.8rem; color: var(--text-soft); margin-bottom: 1.5rem; letter-spacing: 0.06em; }
+
+        input[type="file"] { display: none; }
 
         .btn-choose {
-            background: transparent;
-            border: 1px solid var(--green);
-            color: var(--green);
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            padding: 0.45rem 1rem;
-            border-radius: 3px;
-            cursor: pointer;
-            letter-spacing: 0.06em;
-            transition: all 0.15s;
+            background: transparent; border: 1px solid rgba(0,255,157,0.5);
+            color: var(--green); font-family: var(--mono);
+            font-size: 0.85rem; letter-spacing: 0.08em;
+            padding: 0.6rem 1.5rem; border-radius: 3px;
+            cursor: pointer; transition: all 0.15s;
         }
-        .btn-choose:hover { background: var(--green); color: #000; }
+        .btn-choose:hover { background: var(--green); color: #000; box-shadow: 0 0 16px rgba(0,255,157,0.3); }
 
         /* ── FILE BAR ── */
         .file-bar {
-            display: none;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.65rem 1rem;
-            background: var(--panel2);
-            border: 1px solid var(--border2);
-            border-radius: 4px;
-            margin-bottom: 1rem;
+            display: none; align-items: center; gap: 0.85rem;
+            padding: 0.9rem 1.25rem; background: var(--panel2);
+            border: 1px solid var(--border2); border-radius: 4px; margin-bottom: 1rem;
         }
-        .file-bar-icon { color: var(--green); font-size: 0.9rem; }
-        .file-bar-name { flex: 1; font-size: 0.75rem; color: var(--text); }
+        .file-bar-icon { color: var(--green); font-size: 1rem; }
+        .file-bar-name { flex: 1; font-family: var(--mono); font-size: 0.88rem; color: var(--text); }
+        .file-bar-size { font-family: var(--mono); font-size: 0.75rem; color: var(--text-dim); }
 
         .btn-run {
-            background: var(--green);
-            color: #000;
-            border: none;
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            font-weight: bold;
-            padding: 0.45rem 1rem;
-            border-radius: 3px;
-            cursor: pointer;
-            letter-spacing: 0.05em;
-            transition: background 0.15s;
+            background: var(--green); color: #000; border: none;
+            font-family: var(--mono); font-size: 0.85rem;
+            font-weight: bold; letter-spacing: 0.08em;
+            padding: 0.6rem 1.5rem; border-radius: 3px;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
         }
-        .btn-run:hover { background: var(--green2); }
+        .btn-run:hover { background: var(--green2); box-shadow: 0 0 16px rgba(0,255,157,0.3); }
         .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* ── LOADING ── */
         .terminal-loading {
-            display: none;
-            background: var(--panel);
-            border: 1px solid var(--border2);
-            border-radius: 4px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1rem;
+            display: none; background: var(--panel); border: 1px solid var(--border2);
+            border-radius: 4px; padding: 1.5rem 1.75rem; margin-bottom: 1rem;
         }
-        .tload-line {
-            font-size: 0.72rem;
-            color: var(--green);
-            margin-bottom: 0.35rem;
-            opacity: 0.7;
-        }
-        .dots::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
-        }
-        @keyframes dots {
-            0%,20%{content:''}
-            40%{content:'.'}
-            60%{content:'..'}
-            80%,100%{content:'...'}
-        }
+        .tload-line { font-family: var(--mono); font-size: 0.85rem; color: var(--green); margin-bottom: 0.5rem; opacity: 0.85; }
+        .tload-line:last-child { margin-bottom: 0; }
+        .dots::after { content:''; animation: dots 1.5s steps(4,end) infinite; }
+        @keyframes dots { 0%,20%{content:''} 40%{content:'.'} 60%{content:'..'} 80%,100%{content:'...'} }
+
+        #results { display: none; }
+        @keyframes rise { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
         /* ── STATUS BANNER ── */
         .status-banner {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            padding: 1rem 1.25rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            border: 1px solid;
+            display: grid; grid-template-columns: auto 1fr auto;
+            gap: 2.5rem; align-items: center;
+            padding: 1.75rem 2rem; border-radius: 5px; border: 1px solid;
+            margin-bottom: 1.25rem; animation: rise 0.3s ease;
         }
-        .banner-tampered  { background: var(--red-dim);   border-color: var(--red);   }
-        .banner-authentic { background: var(--green-dim);  border-color: var(--green); }
-        .banner-pending   { background: var(--amber-dim);  border-color: var(--amber); }
+        .banner-authentic { background: var(--green-dim); border-color: rgba(0,255,157,0.3); }
+        .banner-tampered  { background: var(--red-dim);   border-color: rgba(255,77,77,0.35); }
 
-        .status-label { font-size: 0.6rem; color: var(--text-soft); letter-spacing: 0.1em; margin-bottom: 2px; }
-
+        .status-label { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 4px; }
         .status-value {
-            font-size: 1rem;
-            font-weight: bold;
-            letter-spacing: 0.1em;
+            font-family: var(--display);
+            font-size: 2rem; font-weight: 700; letter-spacing: 0.12em; line-height: 1;
         }
-        .banner-tampered  .status-value { color: var(--red); }
-        .banner-authentic .status-value { color: var(--green); }
-        .banner-pending   .status-value { color: var(--amber); }
+        .banner-authentic .status-value { color: var(--green); text-shadow: 0 0 16px rgba(0,255,157,0.4); }
+        .banner-tampered  .status-value { color: var(--red);   text-shadow: 0 0 16px rgba(255,77,77,0.4); }
+        .status-conf { font-family: var(--mono); font-size: 0.82rem; color: var(--text-soft); margin-top: 4px; }
+        .status-file-label { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 4px; }
+        .status-filename   { font-family: var(--mono); font-size: 0.95rem; color: var(--text); word-break: break-all; }
+        .status-right { text-align: right; }
+        .status-id    { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); }
 
-        .status-confidence { font-size: 0.72rem; color: var(--text-soft); }
-        .status-filename   { font-size: 0.72rem; color: var(--text); word-break: break-all; }
-        .status-id         { font-size: 0.65rem; color: var(--text-dim); }
-        .status-banner-right { margin-left: auto; text-align: right; }
-
-        /* ── IMAGE COMPARISON ── */
+        /* ── IMAGE COMPARE ── */
         .image-compare {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            display: none; grid-template-columns: 1fr 1fr;
+            gap: 1.25rem; margin-bottom: 1.25rem; animation: rise 0.3s ease;
         }
         .img-panel { background: var(--panel); border: 1px solid var(--border2); border-radius: 4px; overflow: hidden; }
         .img-label {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.65rem;
-            letter-spacing: 0.08em;
-            border-bottom: 1px solid var(--border);
+            padding: 0.65rem 1rem; font-family: var(--mono); font-size: 0.75rem;
+            letter-spacing: 0.1em; border-bottom: 1px solid var(--border);
         }
         .img-label.original { color: var(--text-soft); }
         .img-label.heatmap  { color: var(--green); }
-        .img-panel img { width: 100%; display: block; }
+        .img-panel img { width: 100%; display: block; max-height: 280px; object-fit: contain; background: var(--bg); }
 
         /* ── RESULTS GRID ── */
-        .results-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--border2);
-            border-radius: 4px;
-            overflow: hidden;
-        }
+        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        .panel { background: var(--panel); border: 1px solid var(--border2); border-radius: 4px; overflow: hidden; animation: rise 0.3s ease; }
         .panel.full { grid-column: 1 / -1; }
 
         .panel-header {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.6rem 0.85rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--panel2);
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--panel2);
         }
-        .panel-num   { font-size: 0.6rem; color: var(--text-dim); }
-        .panel-title { font-size: 0.72rem; color: var(--green); letter-spacing: 0.06em; flex: 1; }
-        .panel-tag   { font-size: 0.58rem; color: var(--text-dim); letter-spacing: 0.08em; background: var(--border); padding: 2px 6px; border-radius: 2px; }
-
-        .panel-body  { padding: 0.85rem; }
+        .panel-num   { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; }
+        .panel-title { font-family: var(--display); font-size: 0.95rem; font-weight: 600; color: var(--green); letter-spacing: 0.12em; flex: 1; }
+        .panel-tag   { font-family: var(--mono); font-size: 0.65rem; color: var(--text-dim); background: var(--border); padding: 2px 10px; border-radius: 2px; letter-spacing: 0.1em; }
+        .panel-body  { padding: 1.25rem; }
 
         .hash-display {
-            font-size: 0.65rem;
-            color: var(--green);
-            word-break: break-all;
-            line-height: 1.8;
-            letter-spacing: 0.02em;
-            margin-bottom: 0.5rem;
+            font-family: var(--mono); font-size: 0.82rem; color: var(--green);
+            word-break: break-all; line-height: 2; letter-spacing: 0.04em;
+            margin-bottom: 0.6rem; border-left: 3px solid rgba(0,255,157,0.4);
+            padding-left: 1rem;
         }
-        .hash-meta { font-size: 0.6rem; color: var(--text-dim); }
-        .hash-note { font-size: 0.63rem; color: var(--text-soft); margin-top: 0.5rem; line-height: 1.6; }
+        .hash-meta { font-family: var(--mono); font-size: 0.7rem; color: var(--text-dim); margin-bottom: 0.5rem; letter-spacing: 0.08em; }
+        .hash-note { font-family: var(--mono); font-size: 0.75rem; color: var(--text-soft); line-height: 1.65; }
 
         .meta-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.75rem;
-            padding: 0.4rem 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.68rem;
+            display: flex; justify-content: space-between; gap: 1rem;
+            padding: 0.55rem 0; border-bottom: 1px solid var(--border); font-size: 0.8rem;
         }
         .meta-row:last-child { border-bottom: none; }
-        .meta-key { color: var(--text-soft); }
-        .meta-val { color: var(--text); text-align: right; word-break: break-word; }
-        .meta-empty { font-size: 0.7rem; color: var(--text-dim); }
+        .meta-key { font-family: var(--mono); color: var(--text-soft); letter-spacing: 0.06em; }
+        .meta-val  { font-family: var(--mono); color: var(--text); text-align: right; word-break: break-word; }
+        .meta-empty { font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); }
 
-        /* ── LEGAL PANEL ── */
+        /* ── ML AWAITING STATE ── */
+        .awaiting-state {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; padding: 2rem 1rem; gap: 0.75rem;
+        }
+        .await-ring {
+            width: 36px; height: 36px; border: 2px solid var(--border2);
+            border-top-color: var(--text-dim); border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .await-text { font-family: var(--display); font-size: 1rem; font-weight: 600; color: var(--text-dim); letter-spacing: 0.2em; }
+
+        /* ── LEGAL ── */
         .legal-panel {
-            background: var(--panel);
-            border: 1px solid var(--border2);
-            border-left: 3px solid var(--green);
-            border-radius: 4px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background: var(--panel); border: 1px solid var(--border2);
+            border-left: 3px solid var(--green); border-radius: 4px; overflow: hidden;
+            margin-bottom: 1.25rem; animation: rise 0.3s ease;
         }
         .legal-panel.tampered { border-left-color: var(--red); }
-
-        .legal-title { font-size: 0.72rem; color: var(--green); letter-spacing: 0.06em; margin-bottom: 0.6rem; }
-        .legal-panel.tampered .legal-title { color: var(--red); }
-        .legal-heading { font-size: 0.72rem; color: var(--text); margin-bottom: 0.5rem; }
-
+        .legal-header {
+            padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border);
+            background: var(--panel2); display: flex; align-items: center; gap: 0.75rem;
+        }
+        .legal-header-title { font-family: var(--display); font-size: 0.95rem; font-weight: 600; color: var(--green); letter-spacing: 0.1em; flex: 1; }
+        .legal-panel.tampered .legal-header-title { color: var(--red); }
+        .legal-body { padding: 1.25rem; }
+        .legal-heading { font-family: var(--mono); font-size: 0.85rem; color: var(--text); margin-bottom: 0.75rem; letter-spacing: 0.04em; }
         .legal-item {
-            font-size: 0.65rem;
-            color: var(--text-soft);
-            padding: 0.3rem 0;
-            border-bottom: 1px solid var(--border);
-            line-height: 1.6;
+            font-family: var(--mono); font-size: 0.78rem; color: var(--text-soft);
+            padding: 0.45rem 0; border-bottom: 1px solid var(--border);
+            line-height: 1.65; letter-spacing: 0.02em;
         }
         .legal-item:last-of-type { border-bottom: none; }
         .legal-item strong { color: var(--text); }
-
         .legal-implication {
-            font-size: 0.63rem;
-            color: var(--text-dim);
-            margin-top: 0.6rem;
-            font-style: italic;
-            line-height: 1.6;
+            font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim);
+            margin-top: 0.75rem; font-style: italic; line-height: 1.7;
+            padding-top: 0.75rem; border-top: 1px solid var(--border);
         }
 
         /* ── ACTION BAR ── */
-        .action-bar {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
+        .action-bar { display: flex; gap: 0.85rem; margin-bottom: 2.5rem; animation: rise 0.3s ease; }
         .btn-action {
-            font-family: 'Courier New', monospace;
-            font-size: 0.72rem;
-            padding: 0.55rem 1.1rem;
-            border-radius: 3px;
-            cursor: pointer;
-            letter-spacing: 0.05em;
-            transition: all 0.15s;
-            border: 1px solid;
+            font-family: var(--mono); font-size: 0.82rem; padding: 0.7rem 1.5rem;
+            border-radius: 3px; cursor: pointer; letter-spacing: 0.06em; transition: all 0.15s; border: 1px solid;
         }
-        .btn-dl  { background: var(--green-dim); color: var(--green); border-color: var(--green); }
-        .btn-dl:hover  { background: var(--green); color: #000; }
+        .btn-dl  { background: var(--green-dim); color: var(--green); border-color: rgba(0,255,157,0.35); }
+        .btn-dl:hover  { background: var(--green); color: #000; box-shadow: 0 0 16px rgba(0,255,157,0.25); }
         .btn-new { background: transparent; color: var(--text-soft); border-color: var(--border2); }
         .btn-new:hover { background: var(--panel2); color: var(--text); }
 
+        /* ── CHAT SLIDE-OVER PANEL ── */
+        .chat-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+        }
+        .chat-overlay.open { opacity: 1; pointer-events: all; }
+
+        .chat-panel {
+            position: fixed; top: 0; right: 0; bottom: 0; width: 400px;
+            background: var(--bg2); border-left: 1px solid var(--border2);
+            display: flex; flex-direction: column; z-index: 201;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: -8px 0 32px rgba(0,0,0,0.6);
+        }
+        .chat-panel.open { transform: translateX(0); }
+
+        .chat-panel-head {
+            padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--border);
+            background: var(--panel2); display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;
+        }
+        .chat-head-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-dot 2s ease-in-out infinite; }
+        .chat-head-title { flex: 1; font-family: var(--display); font-size: 0.95rem; font-weight: 600; color: var(--green); letter-spacing: 0.12em; }
+        .chat-head-sub { font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim); }
+        .chat-close {
+            background: none; border: none; color: var(--text-dim);
+            cursor: pointer; font-size: 1.1rem; font-family: var(--mono);
+            padding: 2px 6px; border-radius: 3px; transition: all 0.15s; line-height: 1;
+        }
+        .chat-close:hover { background: var(--border); color: var(--text); }
+
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 1.25rem;
+            display: flex; flex-direction: column; gap: 0.75rem;
+            scrollbar-width: thin; scrollbar-color: var(--border2) transparent;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+        .msg-ai {
+            font-family: var(--mono); font-size: 0.8rem; color: var(--green);
+            background: var(--green-dim); border: 1px solid rgba(0,255,157,0.15);
+            border-radius: 4px; padding: 0.75rem 0.9rem;
+            line-height: 1.65; word-break: break-word;
+        }
+        .msg-user {
+            font-family: var(--mono); font-size: 0.8rem; color: var(--blue);
+            background: var(--blue-dim); border: 1px solid rgba(77,159,255,0.2);
+            border-radius: 4px; padding: 0.75rem 0.9rem;
+            line-height: 1.65; word-break: break-word;
+            align-self: flex-end; max-width: 92%;
+        }
+        .msg-err { font-family: var(--mono); font-size: 0.78rem; color: var(--red); background: var(--red-dim); border-radius: 4px; padding: 0.6rem 0.9rem; }
+
+        .chat-loader { display: none; padding: 0.4rem 1.25rem; font-family: var(--mono); font-size: 0.75rem; color: var(--text-soft); flex-shrink: 0; }
+        .dots-anim::after { content: ''; animation: dots 1.5s steps(4,end) infinite; }
+
+        .chat-input-area {
+            padding: 1rem 1.25rem; border-top: 1px solid var(--border);
+            background: var(--panel2); flex-shrink: 0; display: flex; gap: 0.6rem;
+        }
+        #chatInput {
+            flex: 1; background: var(--panel); border: 1px solid var(--border2);
+            color: var(--text); font-family: var(--mono); font-size: 0.8rem;
+            padding: 0.6rem 0.85rem; border-radius: 4px; outline: none; transition: border-color 0.15s;
+        }
+        #chatInput:focus { border-color: rgba(0,255,157,0.4); }
+        #chatInput::placeholder { color: var(--text-dim); }
+        .btn-chat-send {
+            background: var(--green); color: #000; border: none;
+            font-family: var(--mono); font-size: 0.78rem;
+            font-weight: bold; letter-spacing: 0.06em;
+            padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; transition: background 0.15s;
+        }
+        .btn-chat-send:hover { background: var(--green2); }
+
         /* ── FOOTER ── */
         footer {
-            background: var(--bg2);
-            border-top: 1px solid var(--border);
-            padding: 0.6rem 1.5rem;
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: var(--bg2); border-top: 1px solid var(--border);
+            padding: 0.75rem 2.5rem; font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim);
+            display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.06em;
         }
+        .footer-link { color: var(--text-dim); text-decoration: none; transition: color 0.15s; }
+        .footer-link:hover { color: var(--green); }
 
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @media (max-width: 900px) {
+            main { padding: 1.5rem 1.25rem; }
+            .results-grid { grid-template-columns: 1fr; }
+            .panel.full { grid-column: 1; }
+            .image-compare { grid-template-columns: 1fr; }
+            .status-banner { grid-template-columns: 1fr; gap: 1rem; }
+            .status-right { text-align: left; }
+            .chat-panel { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- BOOT SCREEN -->
-    <div id="bootScreen">
-        <div class="boot-inner">
-            <div class="boot-line" id="b1">&gt; INITIALIZING DIGITAL EVIDENCE INTEGRITY VERIFICATION SYSTEM v2.0...</div>
-            <div class="boot-line" id="b2">&gt; LOADING CRYPTOGRAPHIC ENGINE [SHA-256]........OK</div>
-            <div class="boot-line" id="b3">&gt; LOADING METADATA FORENSICS MODULE..............OK</div>
-            <div class="boot-line" id="b4">&gt; LOADING ML TAMPERING DETECTION ENGINE..........OK</div>
-            <div class="boot-line" id="b5">&gt; LOADING GRAD-CAM HEATMAP GENERATOR.............OK</div>
-            <div class="boot-line" id="b6">&gt; LOADING GEMINI FORENSIC AI ASSISTANT...........OK</div>
-            <div class="boot-line" id="b7">&gt; ESTABLISHING SECURE SESSION.....................OK</div>
-            <div class="boot-line" id="b8">&gt; SYSTEM READY. <span class="blink">_</span></div>
-        </div>
+<!-- BOOT SCREEN -->
+<div id="bootScreen">
+    <div class="boot-inner">
+        <div class="boot-line" id="b1">&gt; INITIALIZING DIGITAL EVIDENCE INTEGRITY VERIFICATION SYSTEM <v1 class="0">v1.0</v1>....</div>
+        <div class="boot-line" id="b2">&gt; LOADING CRYPTOGRAPHIC ENGINE [SHA-256]..........................OK</div>
+        <div class="boot-line" id="b3">&gt; LOADING METADATA FORENSICS MODULE...............................OK</div>
+        <div class="boot-line" id="b4">&gt; LOADING ML TAMPERING DETECTION ENGINE...........................OK</div>
+        <div class="boot-line" id="b5">&gt; LOADING GRAD-CAM HEATMAP GENERATOR..............................OK</div>
+        <div class="boot-line" id="b6">&gt; LOADING GEMINI FORENSIC AI ASSISTANT............................OK</div>
+        <div class="boot-line" id="b7">&gt; ESTABLISHING SECURE SESSION.....................................OK</div>
+        <div class="boot-line" id="b8">&gt; ALL MODULES READY. SYSTEM ONLINE. <span class="blink">_</span></div>
     </div>
+</div>
 
-    <!-- MAIN APP -->
-    <div id="app" style="display:none;">
+<!-- APP -->
+<div id="app">
 
-        <!-- HEADER -->
-        <header>
-            <div class="header-left">
-                <div class="logo-bracket">[</div>
-                <div>
-                    <span class="logo-eif">DeiVs</span>
-                    <span class="logo-full"> // Digital Evidence Integrity Verification System</span>
-                </div>
-                <div class="logo-bracket">]</div>
-            </div>
-            <div class="header-right">
-                <span class="status-dot"></span>
+    <header>
+        <div class="header-left">
+            <span class="logo-bracket">[</span>
+            <span class="logo-name">DeiVs</span>
+            <span class="logo-full">// Digital Evidence Integrity Verification System</span>
+            <span class="logo-bracket">]</span>
+        </div>
+        <div class="header-right">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
                 <span class="status-text">SYSTEM ONLINE</span>
-                <a href="/user" class="btn-user-view">⇨ USER VIEW</a>
-                <button class="btn-chat-toggle" onclick="toggleChat()">💬 AI ASSISTANT</button>
             </div>
-        </header>
-
-        <!-- TERMINAL BAR -->
-        <div class="terminal-bar">
-            <span class="term-path">root@forensics:~$</span>
-            <span class="term-cmd">run integrity_check --mode=deep --engine=cnn+ela --output=pdf</span>
-            <span class="blink">_</span>
+            <a href="/user" class="btn-header btn-user">⇨ USER VIEW</a>
+            <button class="btn-header btn-ai" onclick="openChat()">💬 AI ASSISTANT</button>
         </div>
+    </header>
 
-        <!-- MAIN WRAPPER (content + chat panel) -->
-        <div class="main-wrapper">
-
-            <main>
-                <!-- UPLOAD SECTION -->
-                <section class="section-upload">
-                    <div class="section-label">&gt; EVIDENCE SUBMISSION</div>
-
-                    <div class="upload-zone" id="uploadZone">
-                        <div class="upload-corner tl"></div>
-                        <div class="upload-corner tr"></div>
-                        <div class="upload-corner bl"></div>
-                        <div class="upload-corner br"></div>
-                        <div class="upload-title">DROP EVIDENCE FILE HERE</div>
-                        <div class="upload-sub">or click to browse &nbsp;// &nbsp;JPG &nbsp;PNG &nbsp;JPEG</div>
-                        <input type="file" id="fileInput" accept=".jpg,.jpeg,.png" hidden>
-                        <button class="btn-choose" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
-                            &gt;_ SELECT FILE
-                        </button>
-                    </div>
-
-                    <div class="file-bar" id="fileBar">
-                        <span class="file-bar-icon">◈</span>
-                        <span class="file-bar-name" id="fileBarName">--</span>
-                        <button class="btn-run" id="btnRun" onclick="analyzeFile()">
-                            &gt;_ RUN ANALYSIS
-                        </button>
-                    </div>
-                </section>
-
-                <!-- LOADING -->
-                <div class="terminal-loading" id="loading">
-                    <div class="tload-line">&gt; COMPUTING SHA-256 HASH<span class="dots"></span></div>
-                    <div class="tload-line">&gt; EXTRACTING EXIF METADATA<span class="dots"></span></div>
-                    <div class="tload-line">&gt; RUNNING ELA PREPROCESSING<span class="dots"></span></div>
-                    <div class="tload-line">&gt; RUNNING DUAL-STREAM CNN INFERENCE<span class="dots"></span></div>
-                    <div class="tload-line">&gt; GENERATING GRAD-CAM HEATMAP<span class="dots"></span></div>
-                </div>
-
-                <!-- RESULTS -->
-                <section id="results" style="display:none;">
-
-                    <!-- STATUS BANNER -->
-                    <div class="status-banner" id="statusBanner">
-                        <div>
-                            <div class="status-label">VERDICT</div>
-                            <div class="status-value" id="statusValue">--</div>
-                            <div class="status-confidence" id="statusConf">--</div>
-                        </div>
-                        <div>
-                            <div class="status-label">FILE</div>
-                            <div class="status-filename" id="statusFilename">--</div>
-                        </div>
-                        <div class="status-banner-right">
-                            <div class="status-label">ANALYSIS ID</div>
-                            <div class="status-id" id="statusId">--</div>
-                        </div>
-                    </div>
-
-                    <!-- IMAGE COMPARISON -->
-                    <div class="image-compare" id="imageCompare" style="display:none;">
-                        <div class="img-panel">
-                            <div class="img-label original">INPUT EVIDENCE</div>
-                            <img id="inputImage" src="" alt="Input">
-                        </div>
-                        <div class="img-panel">
-                            <div class="img-label heatmap">AI LOCALIZATION (GRAD-CAM HEATMAP)</div>
-                            <img id="heatmapImage" src="" alt="Heatmap">
-                        </div>
-                    </div>
-
-                    <!-- RESULTS GRID -->
-                    <div class="results-grid">
-                        <div class="panel full">
-                            <div class="panel-header">
-                                <span class="panel-num">01</span>
-                                <span class="panel-title">SHA-256 CRYPTOGRAPHIC HASH</span>
-                                <span class="panel-tag">INTEGRITY</span>
-                            </div>
-                            <div class="panel-body">
-                                <div class="hash-display" id="hashDisplay">--</div>
-                                <div class="hash-meta">ALGORITHM: SHA-256 &nbsp;·&nbsp; 256-BIT DIGEST</div>
-                                <div class="hash-note">This fingerprint uniquely identifies the file. Any modification — even a single pixel — produces a completely different hash.</div>
-                            </div>
-                        </div>
-
-                        <div class="panel">
-                            <div class="panel-header">
-                                <span class="panel-num">02</span>
-                                <span class="panel-title">METADATA FORENSICS</span>
-                                <span class="panel-tag">FORENSICS</span>
-                            </div>
-                            <div class="panel-body" id="metadataRows">--</div>
-                        </div>
-
-                        <div class="panel">
-                            <div class="panel-header">
-                                <span class="panel-num">03</span>
-                                <span class="panel-title">ML DETECTION RESULT</span>
-                                <span class="panel-tag">AI MODEL</span>
-                            </div>
-                            <div class="panel-body" id="mlPanel">--</div>
-                        </div>
-                    </div>
-
-                    <!-- LEGAL ADVISORY -->
-                    <div class="legal-panel" id="legalPanel" style="display:none;">
-                        <div class="legal-title">⚖ LEGAL ADVISORY (INDIA)</div>
-                        <div class="legal-heading" id="legalHeading">--</div>
-                        <div id="legalSections"></div>
-                        <div class="legal-implication" id="legalImplication">--</div>
-                    </div>
-
-                    <!-- ACTION BAR -->
-                    <div class="action-bar">
-                        <button class="btn-action btn-dl" onclick="downloadReport()">⬇ EXPORT FORENSIC REPORT (PDF)</button>
-                        <button class="btn-action btn-new" onclick="resetForm()">↺ NEW ANALYSIS</button>
-                    </div>
-
-                </section>
-            </main>
-
-            <!-- CHAT PANEL -->
-            <div class="chat-panel" id="chatPanel">
-                <div class="chat-panel-header">
-                    🔍 FORENSIC AI ASSISTANT
-                    <span style="margin-left:auto; color: var(--text-dim); cursor:pointer;" onclick="toggleChat()">✕</span>
-                </div>
-                <div class="chat-messages" id="chatWindow">
-                    <div class="ai-msg">System: Ready for image analysis. Upload an image and ask me anything about it.</div>
-                </div>
-                <div class="chat-loader" id="aiLoader">&gt; AI is thinking<span class="dots"></span></div>
-                <div class="chat-input-area">
-                    <input type="text" id="userInput" placeholder="Ask about the forgery..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                    <button onclick="sendChatMessage()">SEND</button>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- FOOTER -->
-        <footer>
-            <span>B.TECH CSE // CAPSTONE PROJECT // FORENSIC VERIFICATION SYSTEM v2.0</span>
-            <span>DeiVs // All uploads are local — no cloud transmission</span>
-        </footer>
-
+    <div class="terminal-bar">
+        <span class="term-path">root@forensics:~$</span>
+        <span class="term-cmd"> run integrity_check --mode=deep --engine=cnn+ela --output=pdf</span>
+        <span class="blink"> _</span>
     </div>
 
-    <script>
-        // ── BOOT SEQUENCE ─────────────────────────────
-        window.addEventListener('load', () => {
-            const lines = ['b1','b2','b3','b4','b5','b6','b7','b8'];
-            lines.forEach((id, i) => {
-                setTimeout(() => {
-                    document.getElementById(id).style.opacity = '1';
-                }, i * 300);
-            });
+    <main>
+        <div class="section-label">&gt; EVIDENCE SUBMISSION</div>
+
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-corner tl"></div>
+            <div class="upload-corner tr"></div>
+            <div class="upload-corner bl"></div>
+            <div class="upload-corner br"></div>
+            <div class="upload-icon-ring">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <path d="M20 6L20 28M20 6L13 13M20 6L27 13" stroke="#00ff9d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7 32H33" stroke="#00ff9d" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 32V36H33V32" stroke="#00ff9d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="upload-title">DROP EVIDENCE FILE HERE</div>
+            <div class="upload-sub">or click to browse &nbsp;//&nbsp; JPG &nbsp; PNG &nbsp; JPEG</div>
+            <input type="file" id="fileInput" accept=".jpg,.jpeg,.png">
+            <button class="btn-choose" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">&gt;_ SELECT FILE</button>
+        </div>
+
+        <div class="file-bar" id="fileBar">
+            <span class="file-bar-icon">◈</span>
+            <span class="file-bar-name" id="fileBarName">--</span>
+            <span class="file-bar-size" id="fileBarSize"></span>
+            <button class="btn-run" id="btnRun" onclick="analyzeFile()">&gt;_ RUN ANALYSIS</button>
+        </div>
+
+        <div class="terminal-loading" id="loading">
+            <div class="tload-line">&gt; COMPUTING SHA-256 HASH<span class="dots"></span></div>
+            <div class="tload-line">&gt; EXTRACTING EXIF METADATA<span class="dots"></span></div>
+            <div class="tload-line">&gt; RUNNING ELA PREPROCESSING<span class="dots"></span></div>
+            <div class="tload-line">&gt; RUNNING DUAL-STREAM CNN INFERENCE<span class="dots"></span></div>
+            <div class="tload-line">&gt; GENERATING GRAD-CAM HEATMAP<span class="dots"></span></div>
+        </div>
+
+        <section id="results">
+
+            <div class="status-banner" id="statusBanner">
+                <div>
+                    <div class="status-label">VERDICT</div>
+                    <div class="status-value" id="statusValue">--</div>
+                    <div class="status-conf" id="statusConf">--</div>
+                </div>
+                <div>
+                    <div class="status-file-label">FILE</div>
+                    <div class="status-filename" id="statusFilename">--</div>
+                </div>
+                <div class="status-right">
+                    <div class="status-label">ANALYSIS ID</div>
+                    <div class="status-id" id="statusId">--</div>
+                </div>
+            </div>
+
+            <div class="image-compare" id="imageCompare">
+                <div class="img-panel">
+                    <div class="img-label original">INPUT EVIDENCE</div>
+                    <img id="inputImage" src="" alt="Input">
+                </div>
+                <div class="img-panel">
+                    <div class="img-label heatmap">AI LOCALIZATION (GRAD-CAM HEATMAP)</div>
+                    <img id="heatmapImage" src="" alt="Heatmap">
+                </div>
+            </div>
+
+            <div class="results-grid">
+                <div class="panel full">
+                    <div class="panel-header">
+                        <span class="panel-num">01</span>
+                        <span class="panel-title">SHA-256 CRYPTOGRAPHIC HASH</span>
+                        <span class="panel-tag">INTEGRITY</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hash-display" id="hashDisplay">--</div>
+                        <div class="hash-meta">ALGORITHM: SHA-256 &nbsp;·&nbsp; 256-BIT DIGEST</div>
+                        <div class="hash-note">This fingerprint uniquely identifies the file. Any modification — even a single pixel — produces a completely different hash.</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-num">02</span>
+                        <span class="panel-title">METADATA FORENSICS</span>
+                        <span class="panel-tag">FORENSICS</span>
+                    </div>
+                    <div class="panel-body" id="metadataRows">
+                        <div class="meta-empty">No analysis run yet.</div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-num">03</span>
+                        <span class="panel-title">ML TAMPERING DETECTION</span>
+                        <span class="panel-tag">AI MODEL</span>
+                    </div>
+                    <div class="panel-body" id="mlPanel">
+                        <div class="awaiting-state">
+                            <div class="await-ring"></div>
+                            <div class="await-text">AWAITING MODEL</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legal-panel" id="legalPanel" style="display:none;">
+                <div class="legal-header">
+                    <span class="panel-num">04</span>
+                    <span class="legal-header-title">⚖ LEGAL ADVISORY (INDIA)</span>
+                </div>
+                <div class="legal-body">
+                    <div class="legal-heading" id="legalHeading">--</div>
+                    <div id="legalSections"></div>
+                    <div class="legal-implication" id="legalImplication">--</div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="btn-action btn-dl" onclick="downloadReport()">⬇ EXPORT FORENSIC REPORT (PDF)</button>
+                <button class="btn-action btn-new" onclick="resetForm()">↺ NEW ANALYSIS</button>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <span>B.TECH CSE // CAPSTONE PROJECT // FORENSIC VERIFICATION SYSTEM v2.0</span>
+        <a href="/user" class="footer-link">⇨ SWITCH TO USER VIEW</a>
+    </footer>
+</div>
+
+<!-- CHAT OVERLAY + PANEL -->
+<div class="chat-overlay" id="chatOverlay" onclick="closeChat()"></div>
+<div class="chat-panel" id="chatPanel">
+    <div class="chat-panel-head">
+        <div class="chat-head-dot"></div>
+        <div class="chat-head-title">FORENSIC AI ASSISTANT</div>
+        <div class="chat-head-sub">gemini-powered</div>
+        <button class="chat-close" onclick="closeChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <div class="msg-ai">System: Ready for image analysis. Upload an image and ask me anything about the forensic findings.</div>
+    </div>
+    <div class="chat-loader" id="chatLoader">&gt; AI is thinking<span class="dots-anim"></span></div>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="// ask about the forgery analysis..." onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn-chat-send" onclick="sendChat()">SEND</button>
+    </div>
+</div>
+
+<script>
+    // ── BOOT ────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+        const lines = ['b1','b2','b3','b4','b5','b6','b7','b8'];
+        lines.forEach((id,i) => {
+            setTimeout(() => { document.getElementById(id).style.opacity = '1'; }, i * 250);
+        });
+        setTimeout(() => {
+            const bs = document.getElementById('bootScreen');
+            bs.style.transition = 'opacity 0.4s ease';
+            bs.style.opacity = '0';
             setTimeout(() => {
-                document.getElementById('bootScreen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('bootScreen').style.display = 'none';
-                    document.getElementById('app').style.display = 'flex';
-                    document.getElementById('app').style.flexDirection = 'column';
-                    document.getElementById('app').style.animation = 'fadeIn 0.4s ease';
-                }, 500);
-            }, lines.length * 300 + 300);
-        });
+                bs.style.display = 'none';
+                const app = document.getElementById('app');
+                app.style.display = 'flex';
+                app.style.animation = 'fadeIn 0.4s ease';
+            }, 400);
+        }, lines.length * 250 + 300);
+    });
 
-        // ── CHAT TOGGLE ───────────────────────────────
-        let chatOpen = true;
-        function toggleChat() {
-            chatOpen = !chatOpen;
-            document.getElementById('chatPanel').classList.toggle('collapsed', !chatOpen);
+    // ── LEGAL DB ─────────────────────────────────────────────
+    const LEGAL_DB = {
+        TAMPERED: {
+            title: "Advisory: Potential Digital Forgery Detected",
+            sections: [
+                { act: "IT Act, 2000", sec: "Section 65",  desc: "Tampering with computer source documents." },
+                { act: "BNS, 2023",    sec: "Section 336", desc: "Forgery of electronic records." }
+            ],
+            implication: "High risk of document invalidity under Section 65B of the Indian Evidence Act."
+        },
+        AUTHENTIC: {
+            title: "Integrity Verified",
+            sections: [],
+            implication: "Image shows no significant ELA noise variance."
         }
+    };
 
-        // ── DRAG AND DROP ─────────────────────────────
-        const zone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
+    // ── CHAT ─────────────────────────────────────────────────
+    function openChat() {
+        document.getElementById('chatPanel').classList.add('open');
+        document.getElementById('chatOverlay').classList.add('open');
+        document.getElementById('chatInput').focus();
+    }
+    function closeChat() {
+        document.getElementById('chatPanel').classList.remove('open');
+        document.getElementById('chatOverlay').classList.remove('open');
+    }
 
-        zone.addEventListener('click', () => fileInput.click());
-        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-active'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('drag-active'));
-        zone.addEventListener('drop', e => {
-            e.preventDefault();
-            zone.classList.remove('drag-active');
-            if (e.dataTransfer.files[0]) {
-                fileInput.files = e.dataTransfer.files;
-                showFileBar(e.dataTransfer.files[0].name);
-            }
-        });
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files[0]) showFileBar(fileInput.files[0].name);
-        });
+    // ── FILE HANDLING ────────────────────────────────────────
+    const zone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
 
-        function showFileBar(name) {
-            document.getElementById('fileBarName').textContent = name;
-            document.getElementById('fileBar').style.display = 'flex';
-            document.getElementById('results').style.display = 'none';
+    zone.addEventListener('click', () => fileInput.click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-active'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-active'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault(); zone.classList.remove('drag-active');
+        if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; showFileBar(e.dataTransfer.files[0]); }
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) showFileBar(fileInput.files[0]); });
+
+    function showFileBar(file) {
+        document.getElementById('fileBarName').textContent = file.name;
+        document.getElementById('fileBarSize').textContent = (file.size/1024).toFixed(1) + ' KB';
+        document.getElementById('fileBar').style.display = 'flex';
+        document.getElementById('results').style.display = 'none';
+    }
+
+    // ── ANALYZE ──────────────────────────────────────────────
+    let currentData = null;
+
+    async function analyzeFile() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('btnRun').disabled = true;
+
+        const fd = new FormData();
+        fd.append('file', file);
+
+        try {
+            const res  = await fetch('/analyze', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.error) { alert('ERROR: ' + data.error); return; }
+
+            data.legal_info  = LEGAL_DB[data.result] || null;
+            if (!data.heatmap_url) data.heatmap_url = `/static/uploads/heatmap_${data.filename}`;
+            if (!data.image_url)   data.image_url   = `/static/uploads/${data.filename}`;
+
+            currentData = data;
+            renderResults(data);
+        } catch(e) {
+            alert('CONNECTION ERROR. Is the server running?');
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('btnRun').disabled = false;
         }
+    }
 
-        // ── ANALYZE ──────────────────────────────────
-        let currentData = null;
+    function renderResults(data) {
+        const isTam = data.result === 'TAMPERED';
 
-        async function analyzeFile() {
-            const file = fileInput.files[0];
-            if (!file) return;
+        const banner = document.getElementById('statusBanner');
+        banner.className = 'status-banner ' + (isTam ? 'banner-tampered' : 'banner-authentic');
+        document.getElementById('statusValue').textContent    = data.result;
+        document.getElementById('statusConf').textContent     = `Confidence: ${data.confidence}%`;
+        document.getElementById('statusFilename').textContent = data.filename;
+        document.getElementById('statusId').textContent       = 'DeiVs-' + Date.now().toString(36).toUpperCase();
 
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
-            document.getElementById('btnRun').disabled = true;
+        document.getElementById('inputImage').src   = data.image_url;
+        document.getElementById('heatmapImage').src = data.heatmap_url;
+        document.getElementById('imageCompare').style.display = 'grid';
 
-            const fd = new FormData();
-            fd.append('file', file);
+        document.getElementById('hashDisplay').textContent = data.hash;
 
-            try {
-                const res  = await fetch('/analyze', { method: 'POST', body: fd });
-                const data = await res.json();
-                if (data.error) { alert('ERROR: ' + data.error); return; }
-                currentData = data;
-                renderResults(data);
-            } catch(e) {
-                alert('CONNECTION ERROR. Is the server running?');
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('btnRun').disabled = false;
-            }
-        }
+        const m = data.metadata;
+        const fields = [
+            ['SIZE',     m.size_kb ? m.size_kb + ' KB' : null],
+            ['CREATED',  m.created], ['MODIFIED', m.modified],
+            ['SOFTWARE', m.software], ['CAMERA', m.camera],
+            ['DATETIME', m.datetime], ['EXIF', m.exif]
+        ];
+        let rows = '';
+        fields.forEach(([k,v]) => {
+            if (!v || v === 'Not available' || v === 'N/A') return;
+            rows += `<div class="meta-row"><span class="meta-key">${k}</span><span class="meta-val">${v}</span></div>`;
+        });
+        document.getElementById('metadataRows').innerHTML = rows || '<div class="meta-empty">No metadata detected.</div>';
 
-        function renderResults(data) {
-            // Status banner
-            const banner = document.getElementById('statusBanner');
-            const isTampered = data.result === 'TAMPERED';
-            banner.className = 'status-banner ' + (isTampered ? 'banner-tampered' : 'banner-authentic');
-            document.getElementById('statusValue').textContent = data.result;
-            document.getElementById('statusConf').textContent = `Confidence: ${data.confidence}%`;
-            document.getElementById('statusFilename').textContent = data.filename;
-            document.getElementById('statusId').textContent = 'DeiVs-' + Date.now().toString(36).toUpperCase();
+        const col = isTam ? 'var(--red)' : 'var(--green)';
+        document.getElementById('mlPanel').innerHTML = `
+            <div class="meta-row"><span class="meta-key">VERDICT</span><span class="meta-val" style="color:${col};font-weight:bold">${data.result}</span></div>
+            <div class="meta-row"><span class="meta-key">CONFIDENCE</span><span class="meta-val">${data.confidence}%</span></div>
+            <div class="meta-row"><span class="meta-key">MODEL</span><span class="meta-val">DUAL-STREAM CNN</span></div>
+            <div class="meta-row"><span class="meta-key">ACCURACY</span><span class="meta-val">89.2%</span></div>
+            <div style="font-size:0.7rem;color:var(--text-dim);margin-top:0.6rem;line-height:1.6">Heatmap highlights regions with high ELA noise variance. Dark uniform regions may flag incorrectly — known ELA limitation.</div>
+        `;
 
-            // Images
-            if (data.image_url && data.heatmap_url) {
-                document.getElementById('inputImage').src = data.image_url;
-                document.getElementById('heatmapImage').src = data.heatmap_url;
-                document.getElementById('imageCompare').style.display = 'grid';
-            }
-
-            // Hash
-            document.getElementById('hashDisplay').textContent = data.hash;
-
-            // Metadata
-            const m = data.metadata;
-            const fields = [
-                ['SIZE',     m.size_kb + ' KB'],
-                ['CREATED',  m.created],
-                ['MODIFIED', m.modified],
-                ['SOFTWARE', m.software || null],
-                ['CAMERA',   m.camera   || null],
-                ['DATETIME', m.datetime || null],
-            ];
-            let rows = '';
-            fields.forEach(([k, v]) => {
-                if (!v || v === 'Not available') return;
-                rows += `<div class="meta-row"><span class="meta-key">${k}</span><span class="meta-val">${v}</span></div>`;
+        if (data.legal_info) {
+            const li = data.legal_info;
+            document.getElementById('legalHeading').textContent = li.title;
+            let secs = '';
+            (li.sections || []).forEach(s => {
+                secs += `<div class="legal-item"><strong>${s.act} — ${s.sec}:</strong> ${s.desc}</div>`;
             });
-            document.getElementById('metadataRows').innerHTML = rows || '<div class="meta-empty">No metadata detected.</div>';
-
-            // ML panel
-            document.getElementById('mlPanel').innerHTML = `
-                <div class="meta-row"><span class="meta-key">VERDICT</span><span class="meta-val" style="color:${isTampered?'var(--red)':'var(--green)'}">${data.result}</span></div>
-                <div class="meta-row"><span class="meta-key">CONFIDENCE</span><span class="meta-val">${data.confidence}%</span></div>
-                <div class="meta-row"><span class="meta-key">MODEL</span><span class="meta-val">DUAL-STREAM CNN</span></div>
-                <div class="meta-row"><span class="meta-key">ACCURACY</span><span class="meta-val">89.2%</span></div>
-                <div style="font-size:0.6rem;color:var(--text-dim);margin-top:0.5rem;">Heatmap highlights regions with high ELA noise variance.</div>
-            `;
-
-            // Legal advisory
-            if (data.legal_info) {
-                const li = data.legal_info;
-                document.getElementById('legalHeading').textContent = li.title;
-                let sections = '';
-                if (li.sections && li.sections.length > 0) {
-                    li.sections.forEach(s => {
-                        sections += `<div class="legal-item"><strong>${s.act} — ${s.sec}:</strong> ${s.desc}</div>`;
-                    });
-                }
-                document.getElementById('legalSections').innerHTML = sections;
-                document.getElementById('legalImplication').textContent = 'Forensic Implication: ' + li.implication;
-                const lp = document.getElementById('legalPanel');
-                lp.style.display = 'block';
-                lp.className = 'legal-panel ' + (isTampered ? 'tampered' : '');
-            }
-
-            document.getElementById('results').style.display = 'block';
-            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('legalSections').innerHTML = secs || '<div class="meta-empty">No sections applicable.</div>';
+            document.getElementById('legalImplication').textContent = 'Forensic Implication: ' + li.implication;
+            const lp = document.getElementById('legalPanel');
+            lp.style.display = 'block';
+            lp.className = 'legal-panel ' + (isTam ? 'tampered' : '');
         }
 
-        // ── CHAT ─────────────────────────────────────
-        async function sendChatMessage() {
-            const input = document.getElementById('userInput');
-            const chatWindow = document.getElementById('chatWindow');
-            const loader = document.getElementById('aiLoader');
-            const message = input.value.trim();
-            if (!message) return;
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
 
-            chatWindow.innerHTML += `<div class="user-msg"><b>You:</b> ${message}</div>`;
-            input.value = '';
-            loader.style.display = 'block';
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+    // ── CHAT ─────────────────────────────────────────────────
+    async function sendChat() {
+        const input   = document.getElementById('chatInput');
+        const msgs    = document.getElementById('chatMessages');
+        const loader  = document.getElementById('chatLoader');
+        const message = input.value.trim();
+        if (!message) return;
 
-            try {
-                const res = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-                const data = await res.json();
-                if (data.analysis_reply) {
-                    chatWindow.innerHTML += `<div class="ai-msg"><b>AI:</b> ${data.analysis_reply}</div>`;
-                } else {
-                    chatWindow.innerHTML += `<div class="error-msg">Error: ${data.error}</div>`;
-                }
-            } catch(e) {
-                chatWindow.innerHTML += `<div class="error-msg">Connection error.</div>`;
-            } finally {
-                loader.style.display = 'none';
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-            }
-        }
+        msgs.innerHTML += `<div class="msg-user">&gt; ${message}</div>`;
+        input.value = '';
+        loader.style.display = 'block';
+        msgs.scrollTop = msgs.scrollHeight;
 
-        // ── PDF REPORT ────────────────────────────────
-        function downloadReport() {
-            if (!currentData) return;
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-            const d = currentData;
-            const m = d.metadata;
-            const pageW = doc.internal.pageSize.getWidth();
-            const margin = 50;
-            const contentW = pageW - margin * 2;
-            let y = 0;
-
-            const LINE = () => { doc.setDrawColor(180,180,180); doc.setLineWidth(0.5); doc.line(margin, y, pageW-margin, y); y += 14; };
-            const GAP  = (n=10) => { y += n; };
-            const TEXT = (txt, size=10, color=[40,40,40], style='normal') => {
-                doc.setFontSize(size); doc.setTextColor(...color); doc.setFont('courier', style);
-                const lines = doc.splitTextToSize(txt, contentW);
-                doc.text(lines, margin, y);
-                y += lines.length * (size * 1.4);
-            };
-
-            // Header
-            doc.setFillColor(10, 12, 15);
-            doc.rect(0, 0, pageW, 55, 'F');
-            doc.setFontSize(14); doc.setTextColor(0,255,157); doc.setFont('courier','bold');
-            doc.text('DeiVs // DIGITAL EVIDENCE INTEGRITY VERIFICATION SYSTEM', margin, 28);
-            doc.setFontSize(8); doc.setTextColor(120,140,160); doc.setFont('courier','normal');
-            doc.text('FORENSIC ANALYSIS REPORT v2.0', margin, 42);
-            y = 70;
-
-            TEXT(`ANALYSIS ID  : DeiVs-${Date.now().toString(36).toUpperCase()}`, 9, [100,100,100]);
-            TEXT(`FILE NAME    : ${d.filename}`, 9, [100,100,100]);
-            TEXT(`TIMESTAMP    : ${new Date().toLocaleString()}`, 9, [100,100,100]);
-            TEXT(`VERDICT      : ${d.result}`, 9, d.result === 'TAMPERED' ? [200,60,60] : [0,180,100], 'bold');
-            TEXT(`CONFIDENCE   : ${d.confidence}%`, 9, [100,100,100]);
-            GAP(6); LINE();
-
-            TEXT('01 // SHA-256 CRYPTOGRAPHIC HASH', 11, [20,80,160], 'bold');
-            GAP(5); TEXT(d.hash, 8, [40,40,40]);
-            GAP(4); TEXT('Any modification to the image produces a completely different hash.', 8, [120,120,120]);
-            GAP(8); LINE();
-
-            TEXT('02 // FILE METADATA', 11, [20,80,160], 'bold');
-            GAP(5);
-            [['SIZE', m.size_kb+' KB'],['CREATED',m.created],['MODIFIED',m.modified],
-             ['SOFTWARE',m.software||'N/A'],['CAMERA',m.camera||'N/A'],['DATETIME',m.datetime||'N/A']
-            ].forEach(([k,v]) => {
-                doc.setFontSize(9); doc.setFont('courier','bold'); doc.setTextColor(100,100,100);
-                doc.text(`${k.padEnd(12)}:`, margin, y);
-                doc.setFont('courier','normal'); doc.setTextColor(40,40,40);
-                doc.text(String(v), margin+100, y);
-                y += 16;
+        try {
+            const res  = await fetch('/chat', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
             });
-            GAP(8); LINE();
-
-            TEXT('03 // ML TAMPERING DETECTION', 11, [20,80,160], 'bold');
-            GAP(5);
-            TEXT(`VERDICT      : ${d.result}`, 9, d.result==='TAMPERED'?[200,60,60]:[0,180,100], 'bold');
-            TEXT(`CONFIDENCE   : ${d.confidence}%`, 9, [40,40,40]);
-            TEXT('MODEL        : Dual-Stream CNN (RGB + ELA inputs, 128x128)', 9, [40,40,40]);
-            TEXT('ACCURACY     : 89.2% on test dataset', 9, [40,40,40]);
-            TEXT('NOTE         : Grad-CAM heatmap highlights regions with high ELA noise variance.', 8, [120,120,120]);
-            GAP(8); LINE();
-
-            if (d.legal_info) {
-                TEXT('04 // LEGAL ADVISORY (INDIA)', 11, [20,80,160], 'bold');
-                GAP(5);
-                TEXT(d.legal_info.title, 9, [40,40,40], 'bold');
-                GAP(4);
-                (d.legal_info.sections||[]).forEach(s => {
-                    TEXT(`${s.act} — ${s.sec}: ${s.desc}`, 8, [80,80,80]);
-                    GAP(3);
-                });
-                TEXT(`Forensic Implication: ${d.legal_info.implication}`, 8, [120,120,120]);
-                GAP(8); LINE();
+            const data = await res.json();
+            if (data.analysis_reply) {
+                msgs.innerHTML += `<div class="msg-ai">AI: ${data.analysis_reply}</div>`;
+            } else {
+                msgs.innerHTML += `<div class="msg-err">ERROR: ${data.error || 'Unknown error'}</div>`;
             }
-
-            TEXT('DISCLAIMER', 10, [160,40,40], 'bold');
-            GAP(4);
-            TEXT('This report is generated for educational and forensic analysis purposes only. Results are based on automated analysis and should be reviewed by a certified forensic expert before use in legal proceedings.', 8, [120,120,120]);
-            GAP(10); LINE();
-            TEXT('END OF REPORT // DeiVs v2.0 // B.Tech CSE Capstone Project', 8, [150,150,150]);
-
-            doc.save(`DeiVs_Forensic_Report_${d.filename}_${Date.now()}.pdf`);
+        } catch(e) {
+            msgs.innerHTML += `<div class="msg-err">CONNECTION ERROR.</div>`;
+        } finally {
+            loader.style.display = 'none';
+            msgs.scrollTop = msgs.scrollHeight;
         }
+    }
 
-        // ── RESET ─────────────────────────────────────
-        function resetForm() {
-            fileInput.value = '';
-            document.getElementById('fileBar').style.display = 'none';
-            document.getElementById('results').style.display = 'none';
-            document.getElementById('imageCompare').style.display = 'none';
-            currentData = null;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    </script>
+    // ── PDF ───────────────────────────────────────────────────
+    function downloadReport() {
+    if (!currentData) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const d = currentData, m = d.metadata || {};
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 48, cW = pageW - margin * 2;
+    let y = 0;
+
+    const isTam = d.result === 'TAMPERED';
+
+    // ── HELPERS ──────────────────────────────────────────────
+    const LINE = (color=[220,220,220]) => {
+        doc.setDrawColor(...color); doc.setLineWidth(0.5);
+        doc.line(margin, y, pageW - margin, y); y += 12;
+    };
+    const GAP = (n = 10) => { y += n; };
+    const TEXT = (txt, size = 10, color = [40,40,40], style = 'normal', font = 'helvetica') => {
+        doc.setFontSize(size); doc.setTextColor(...color); doc.setFont(font, style);
+        const lines = doc.splitTextToSize(txt, cW);
+        doc.text(lines, margin, y);
+        y += lines.length * (size * 1.45);
+    };
+    const LABEL = (txt) => TEXT(txt, 7.5, [130,130,130], 'normal');
+    const VALUE = (txt, color = [30,30,30]) => TEXT(txt, 9.5, color, 'normal');
+    const checkPage = (needed = 60) => {
+        if (y + needed > pageH - margin) { doc.addPage(); y = margin; }
+    };
+
+    // ── WHITE BACKGROUND ────────────────────────────────────
+    doc.setFillColor(255,255,255);
+    doc.rect(0, 0, pageW, pageH, 'F');
+
+    // ── HEADER STRIP ────────────────────────────────────────
+    const headerH = 56;
+    doc.setFillColor(18, 24, 32);
+    doc.rect(0, 0, pageW, headerH, 'F');
+
+    // Accent bar (left edge)
+    doc.setFillColor(0, 200, 120);
+    doc.rect(0, 0, 4, headerH, 'F');
+
+    doc.setFontSize(15); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+    doc.text('DeiVs — Evidence Integrity Report', margin + 6, 30);
+    doc.setFontSize(8); doc.setTextColor(160,170,180); doc.setFont('helvetica','normal');
+    doc.text('Digital Evidence Integrity Verification System  ·  v2.0', margin + 6, 46);
+
+    // Verdict pill (top right)
+    const pillColor = isTam ? [200, 40, 40] : [0, 160, 90];
+    doc.setFillColor(...pillColor);
+    doc.roundedRect(pageW - margin - 90, 14, 90, 26, 4, 4, 'F');
+    doc.setFontSize(9); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+    doc.text(d.result, pageW - margin - 45, 31, { align: 'center' });
+
+    y = headerH + 18;
+
+    // ── SUMMARY ROW ─────────────────────────────────────────
+    doc.setFontSize(8); doc.setTextColor(110,110,110); doc.setFont('helvetica','normal');
+    doc.text(`File: ${d.filename}`, margin, y);
+    doc.text(`Confidence: ${d.confidence}%`, margin + 220, y);
+    doc.text(`Date: ${new Date().toLocaleString()}`, margin + 360, y);
+    y += 11;
+    doc.text(`Analysis ID: DeiVs-${Date.now().toString(36).toUpperCase()}`, margin, y);
+    y += 16;
+    LINE([200, 200, 200]);
+
+    // ── SECTION 1: VISUAL EVIDENCE ──────────────────────────
+    TEXT('1. Visual Evidence', 12, [18,24,32], 'bold'); GAP(6);
+
+    const imgEl  = document.getElementById('inputImage');
+    const heatEl = document.getElementById('heatmapImage');
+    const imgW   = (cW - 16) / 2;
+
+    try {
+        const iRatio = imgEl.naturalHeight / imgEl.naturalWidth;
+        const hRatio = heatEl.naturalHeight / heatEl.naturalWidth;
+        const iH = imgW * iRatio;
+        const hH = imgW * hRatio;
+        const maxH = Math.max(iH, hH, 120);
+
+        // Labels
+        doc.setFontSize(7.5); doc.setTextColor(80,80,80); doc.setFont('helvetica','bold');
+        doc.text('ORIGINAL IMAGE', margin, y);
+        doc.text('AI LOCALIZATION HEATMAP', margin + imgW + 16, y);
+        y += 8;
+
+        // Image frames
+        doc.setDrawColor(220,220,220); doc.setLineWidth(0.5);
+        doc.rect(margin, y, imgW, maxH);
+        doc.rect(margin + imgW + 16, y, imgW, maxH);
+
+        doc.addImage(imgEl.src,  'JPEG', margin,            y, imgW, iH);
+        doc.addImage(heatEl.src, 'JPEG', margin + imgW + 16, y, imgW, hH);
+
+        y += maxH + 6;
+        doc.setFontSize(7); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+        doc.text('Heatmap highlights regions with high ELA noise variance — potential sites of manipulation.', margin, y);
+        y += 14;
+    } catch(e) {
+        TEXT('Images unavailable in this report.', 8, [150,150,150]);
+    }
+
+    LINE(); checkPage(80);
+
+    // ── SECTION 2: CRYPTOGRAPHIC FINGERPRINT ────────────────
+    TEXT('2. Cryptographic Fingerprint (SHA-256)', 12, [18,24,32], 'bold'); GAP(6);
+
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(margin, y, cW, 30, 3, 3, 'F');
+    doc.setDrawColor(210,215,220); doc.setLineWidth(0.5);
+    doc.roundedRect(margin, y, cW, 30, 3, 3, 'S');
+
+    doc.setFontSize(8); doc.setTextColor(30,80,160); doc.setFont('courier','normal');
+    const hashLines = doc.splitTextToSize(d.hash, cW - 20);
+    doc.text(hashLines, margin + 10, y + 14);
+    y += 38; GAP(4);
+
+    TEXT('Any modification — even a single pixel — produces a completely different fingerprint.', 8, [100,100,100]);
+    GAP(8); LINE(); checkPage(80);
+
+    // ── SECTION 3: FILE METADATA ─────────────────────────────
+    TEXT('3. File Metadata', 12, [18,24,32], 'bold'); GAP(6);
+
+    const metaLabelMap = {
+        size_kb: 'File Size', created: 'Created', modified: 'Last Modified',
+        software: 'Editing Software', camera: 'Camera / Device',
+        datetime: 'Date Taken', exif: 'EXIF Data'
+    };
+    const metaEntries = Object.entries(m).filter(([,v]) => v && v !== 'N/A' && v !== 'Not available');
+
+    if (metaEntries.length > 0) {
+        // Draw a simple table
+        metaEntries.forEach(([k, v], i) => {
+            checkPage(18);
+            if (i % 2 === 0) {
+                doc.setFillColor(248, 249, 250);
+                doc.rect(margin, y - 10, cW, 16, 'F');
+            }
+            const label = metaLabelMap[k] || k.toUpperCase();
+            const val   = k === 'size_kb' ? v + ' KB' : String(v);
+            doc.setFontSize(8.5); doc.setTextColor(80,80,80); doc.setFont('helvetica','bold');
+            doc.text(label + ':', margin + 4, y);
+            doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+            doc.text(val, margin + 140, y);
+            y += 16;
+        });
+    } else {
+        TEXT('No metadata extracted.', 8, [140,140,140]);
+    }
+    GAP(6); LINE(); checkPage(80);
+
+    // ── SECTION 4: AI TAMPERING DETECTION ────────────────────
+    TEXT('4. AI Tampering Detection', 12, [18,24,32], 'bold'); GAP(6);
+
+    const resultColor = isTam ? [180,30,30] : [0,130,70];
+    TEXT(`Verdict: ${d.result}`, 10.5, resultColor, 'bold');
+    TEXT(`Confidence: ${d.confidence}%`, 9, [40,40,40]);
+    TEXT('Model: Dual-Stream CNN (RGB + ELA inputs, 128×128)', 9, [40,40,40]);
+    TEXT('Model Accuracy: 89.2% on test dataset', 9, [40,40,40]);
+    GAP(4);
+    TEXT('Note: Grad-CAM heatmap highlights regions of high ELA noise variance. Dark or uniform regions may be flagged due to ELA limitations — always review with expert judgement.', 7.5, [120,120,120]);
+    GAP(8); LINE(); checkPage(60);
+
+    // ── SECTION 5: LEGAL ADVISORY ─────────────────────────────
+    if (d.legal_info) {
+        TEXT('5. Legal Advisory (India)', 12, [18,24,32], 'bold'); GAP(6);
+
+        // Colored left border block
+        doc.setFillColor(isTam ? 255 : 240, isTam ? 245 : 250, isTam ? 245 : 244);
+        doc.rect(margin, y - 4, cW, 10 + (d.legal_info.sections.length * 20) + 20, 'F');
+        doc.setFillColor(...(isTam ? [200,40,40] : [0,160,90]));
+        doc.rect(margin, y - 4, 3, 10 + (d.legal_info.sections.length * 20) + 20, 'F');
+
+        TEXT(d.legal_info.title, 9.5, [30,30,30], 'bold'); GAP(4);
+        (d.legal_info.sections || []).forEach(s => {
+            TEXT(`${s.act} — ${s.sec}: ${s.desc}`, 8.5, [60,60,60]); GAP(2);
+        });
+        GAP(4);
+        TEXT(`Forensic Implication: ${d.legal_info.implication}`, 8, [100,100,100]);
+        GAP(8); LINE(); checkPage(40);
+    }
+
+    // ── DISCLAIMER ────────────────────────────────────────────
+    doc.setFillColor(252,252,252);
+    doc.rect(margin, y - 4, cW, 44, 'F');
+    TEXT('Disclaimer', 9, [160,40,40], 'bold');
+    TEXT('This report is for educational and forensic analysis purposes only. Results are based on automated analysis and must be reviewed by a certified forensic expert before use in legal proceedings.', 7.5, [120,120,120]);
+
+    // ── FOOTER LINE ───────────────────────────────────────────
+    y = pageH - 28;
+    doc.setDrawColor(220,220,220); doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y); y += 10;
+    doc.setFontSize(7); doc.setTextColor(160,160,160); doc.setFont('helvetica','normal');
+    doc.text('DeiVs v2.0  ·  B.Tech CSE Capstone Project  ·  For educational and forensic use only', margin, y);
+    doc.text(`Page 1`, pageW - margin, y, { align: 'right' });
+
+    doc.save(`DeiVs_Report_${d.filename}_${Date.now()}.pdf`);
+}
+
+    // ── RESET ─────────────────────────────────────────────────
+    function resetForm() {
+        fileInput.value = '';
+        document.getElementById('fileBar').style.display = 'none';
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('imageCompare').style.display = 'none';
+        document.getElementById('legalPanel').style.display = 'none';
+        currentData = null;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
 </body>
 </html>
