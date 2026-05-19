@@ -8,7 +8,8 @@ import numpy as np
 from PIL import Image, ImageChops, ImageEnhance
 import cv2
 import os
-import sqlite3
+import asyncio
+import sqlite3 
 import time
 from google import genai
 from dotenv import load_dotenv
@@ -95,7 +96,7 @@ def run_ela(image_path, quality=90):
     original.save(resaved_path, 'JPEG', quality=quality)
     resaved = Image.open(resaved_path)
     ela_image = ImageChops.difference(original, resaved)
-    extrema = ela_image.getextrema()
+    extrema = ela_image.getextrema() 
     max_diff = max([ex[1] for ex in extrema])
     scale = 255.0 / max_diff if max_diff != 0 else 1
     ela_image = ImageEnhance.Brightness(ela_image).enhance(scale)
@@ -188,21 +189,43 @@ async def analyze(file: UploadFile = File(...)):
 
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
-    try:
-        config = {
-            "system_instruction": "You are a Forensic Image Specialist. Use the analysis context provided to help the user."
-        }
-        context_data = f"Analysis Context: {str(last_analysis)}"
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=[context_data, request.message],
-            config=config
+    # Configuration for the AI
+    config = {
+        "system_instruction": (
+            "You are a Forensic Image Specialist. Provide concise advice based on Indian IT Laws. "
+            "Reference the IT Act 2000 and BNS 2023 where relevant."
         )
-        return {"analysis_reply": response.text}
-    except Exception as e:
-        if "429" in str(e):
-            return {"analysis_reply": "⚠️ Rate limit hit. Please wait 1 minute."}
-        return {"error": f"API Connection Issue: {type(e).__name__}"}
+    }
+
+
+    # Prepare the payload
+    context_summary = f"Current Analysis: {last_analysis['result']} with {last_analysis['confidence']}% confidence."
+    full_prompt = f"{context_summary}\n\nUser: {request.message}"
+
+    # Do not reuse a global chat session. Create a fresh chat per request to avoid
+    # accumulated conversation context (which can burn tokens quickly).
+    max_retries = 1
+    for attempt in range(max_retries):
+        try:
+            chat = client.chats.create(model="gemini-2.0-flash", config=config)
+            response = chat.send_message(full_prompt)
+            return {"analysis_reply": response.text}
+        except Exception as e:
+            error_msg = str(e)
+            print("[Gemini /chat] error:", repr(e))
+
+            # If rate limited, just return (no retries; retries can double-charge)
+            if "429" in error_msg:
+                return JSONResponse(
+                    status_code=429,
+                    content={"analysis_reply": "⚠️ Rate limit hit. Please wait 10 seconds and try again."},
+                )
+
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Gemini connection/auth error. Check server logs."},
+            )
+
 
 # ── Startup ──────────────────────────────
 @app.on_event("startup")

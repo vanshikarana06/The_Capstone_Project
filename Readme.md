@@ -53,9 +53,15 @@ After iterating through multiple architectures, the **Dual-Input Model** emerged
 
 ## 📂 Project Structure
 ```text
-├── models/
-│   └── best_dual_input_model.h5    # Final trained weights
-├── notebooks/
-│   └── Image_Forensics_Main.ipynb  # Full training & evaluation pipeline
-├── README.md                       # Project documentation
-└── sample_tests/                   # Images for local inferenceImage Tampering Detection 
+├── static/
+│   └── css
+    └── js
+    └── uploads
+├── templates/
+│   └── index.html 
+├── app.py
+├── hasher.py
+├── Image_Tampering_detection(1).ipynb
+├── metadata.py
+├── requirements.txt
+├── README.md                       

@@ -593,7 +593,8 @@
         .chat-popup-input button:hover { background: #1d4ed8; }
 
         /* ── RESPONSIVE ── */
-        @media (max-width: 600px) {
+        @media (max-width: 600px)
+        {
             .chat-popup { width: calc(100vw - 2rem); right: 1rem; }
         }
             .details-grid { grid-template-columns: 1fr; }
@@ -603,7 +604,8 @@
             .image-compare { grid-template-columns: 1fr; }
             footer { flex-direction: column; gap: 0.5rem; }
             .action-row { flex-direction: column; }
-        }
+        
+    
     </style>
 </head>
 <body>
@@ -1094,12 +1096,21 @@
             }
         }
 
+        let chatBusy = false;
+
         async function sendChat() {
+            if (chatBusy) return;
+
             const input   = document.getElementById('chatInput');
             const msgs    = document.getElementById('chatMessages');
             const loader  = document.getElementById('chatLoader');
+            const btnSend = document.getElementById('chatSendBtn');
+
             const message = input.value.trim();
             if (!message) return;
+
+            chatBusy = true;
+            if (btnSend) btnSend.disabled = true;
 
             msgs.innerHTML += `<div class="chat-msg-user">${message}</div>`;
             input.value = '';
@@ -1116,12 +1127,14 @@
                 if (data.analysis_reply) {
                     msgs.innerHTML += `<div class="chat-msg-ai">${data.analysis_reply}</div>`;
                 } else {
-                    msgs.innerHTML += `<div class="chat-msg-error">Something went wrong. Please try again.</div>`;
+                    msgs.innerHTML += `<div class="chat-msg-error">${data.error || 'Something went wrong. Please try again.'}</div>`;
                 }
             } catch(e) {
                 msgs.innerHTML += `<div class="chat-msg-error">Could not connect to server.</div>`;
             } finally {
                 loader.style.display = 'none';
+                chatBusy = false;
+                if (btnSend) btnSend.disabled = false;
                 msgs.scrollTop = msgs.scrollHeight;
             }
         }
@@ -1145,8 +1158,8 @@
             <div class="chat-typing-dots"><span></span><span></span><span></span></div>
         </div>
         <div class="chat-popup-input">
-            <input type="text" id="chatInput" placeholder="Ask about the analysis..." onkeydown="if(event.key==='Enter') sendChat()">
-            <button onclick="sendChat()">Send</button>
+            <input type="text" id="chatInput" placeholder="Ask about the analysis..." onkeydown="if(event.key==='Enter') sendChat()" />
+            <button type="button" onclick="sendChat()" id="chatSendBtn">Send</button>
         </div>
     </div>
 </body>
